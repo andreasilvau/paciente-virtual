@@ -199,6 +199,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         <dl>
           <div><dt class="label">Nombre</dt><dd id="fNombre">—</dd></div>
           <div><dt class="label">Edad</dt><dd id="fEdad">—</dd></div>
+          <div><dt class="label">RUT</dt><dd id="fRut">—</dd></div>
           <div><dt class="label">Atención</dt><dd id="fAtencion">—</dd></div>
           <div class="wide"><dt class="label">Motivo de consulta registrado en admisión</dt><dd id="fMotivo">—</dd></div>
         </dl>
@@ -291,7 +292,7 @@ function pintarTarjetas() {
 }
 function elegirCaso(c) {
   casoActual = c; guardar("caso", c.id);
-  $("fNombre").textContent = c.nombre; $("fEdad").textContent = c.edad;
+  $("fNombre").textContent = c.nombre; $("fEdad").textContent = c.edad; $("fRut").textContent = c.rut || "—";
   $("fAtencion").textContent = c.atencion; $("fMotivo").textContent = c.motivo;
   $("btnNueva").onclick();
   mostrar("app");

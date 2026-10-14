@@ -5,6 +5,8 @@
 export const CASOS = [
   {
     id: "valentina",
+    rut: "11.111.111-1",
+    identificacion: "RUT: 11.111.111-1 (ficticio)\nFecha de nacimiento: 14 de marzo de 2002\nDomicilio: Pasaje Los Aromos (ficticio), Ñuñoa\nPrevisión: FONASA, tramo B\nEscolaridad: Universitaria en curso (último año de Ingeniería Comercial)\nOcupación: Estudiante y vendedora a medio tiempo\nEstado civil: Soltera, pololea hace un año\nVive: Con dos amigas\nContacto de emergencia: Su mamá, Carolina\nReligión o creencias: Ninguna",
     nombre: "Valentina M.",
     edad: "24 años",
     atencion: "Consulta agendada",
@@ -39,6 +41,8 @@ Joven chilena, cercana y educada; trata de "usted". Usa palabras cotidianas ("pa
   },
   {
     id: "camila",
+    rut: "22.222.222-2",
+    identificacion: "RUT: 22.222.222-2 (ficticio)\nFecha de nacimiento: 2 de mayo de 2007\nDomicilio: Calle Las Acacias (ficticia), Puente Alto\nPrevisión: FONASA, tramo A\nEscolaridad: Técnico de nivel superior en curso\nOcupación: Estudiante\nEstado civil: Soltera, pololea hace 4 meses\nVive: Con su mamá y su hermano menor\nContacto de emergencia: Su mamá, Patricia. Duda antes de darlo, porque no quiere que su mamá se entere de la consulta.\nReligión o creencias: Católica, no practicante",
     nombre: "Camila R.",
     edad: "19 años",
     atencion: "Consulta espontánea",
@@ -75,6 +79,8 @@ Joven chilena, informal pero respetuosa; trata de "usted" a quien la atiende. Us
   },
   {
     id: "benjamin",
+    rut: "33.333.333-3",
+    identificacion: "RUT: 33.333.333-3 (ficticio)\nFecha de nacimiento: 20 de febrero de 2010\nDomicilio: Pasaje Los Robles (ficticio), Maipú\nPrevisión: FONASA, tramo C (carga de su papá)\nEscolaridad: Segundo medio en curso\nOcupación: Estudiante\nEstado civil: Soltero, pololea hace 5 meses\nVive: Con su papá, su mamá y su hermana chica\nContacto de emergencia: Su papá, Luis. Pregunta si de verdad lo van a llamar antes de darlo.\nReligión o creencias: Ninguna en particular",
     sexo: "masculino",
     nombre: "Benjamín A.",
     edad: "16 años",
@@ -115,6 +121,8 @@ Es un personaje menor de edad en un contexto clínico. No describas detalles sex
   },
   {
     id: "mariaeugenia",
+    rut: "44.444.444-4",
+    identificacion: "RUT: 44.444.444-4 (ficticio)\nFecha de nacimiento: 9 de julio de 1968\nDomicilio: Calle Los Castaños (ficticia), La Florida\nPrevisión: FONASA, tramo C\nEscolaridad: Enseñanza media completa\nOcupación: Cajera de supermercado, turnos rotativos\nEstado civil: Casada\nVive: Con su marido\nContacto de emergencia: Su hija, Daniela\nReligión o creencias: Católica",
     nombre: "María Eugenia S.",
     edad: "58 años",
     atencion: "Consulta agendada por su hija",
@@ -151,6 +159,8 @@ Mujer chilena de 58 años, cordial pero práctica; trata de "usted" o de "mijita
   },
   {
     id: "javiera",
+    rut: "55.555.555-5",
+    identificacion: "RUT: 55.555.555-5 (ficticio)\nFecha de nacimiento: 25 de enero de 1999\nDomicilio: Pasaje Los Olmos (ficticio), San Bernardo\nPrevisión: FONASA, tramo A\nEscolaridad: Enseñanza media completa\nOcupación: Dueña de casa; antes vendedora\nEstado civil: Convive con su pareja hace dos años\nVive: Con su pareja, Rodrigo\nContacto de emergencia: Primero nombra a Rodrigo. Si le preguntan por otra persona, duda y nombra a su hermana Fernanda, que vive en otra región.\nReligión o creencias: Ninguna",
     nombre: "Javiera P.",
     edad: "27 años",
     atencion: "Control prenatal",
@@ -190,6 +200,8 @@ No describas violencia en detalle gráfico. Si la estudiante pregunta por un pla
   },
   {
     id: "mirlande",
+    rut: "66.666.666-6",
+    identificacion: "RUT: 66.666.666-6 (ficticio)\nFecha de nacimiento: 18 de abril de 1996\nDomicilio: Calle Las Palmas (ficticia), Estación Central\nPrevisión: FONASA, tramo A\nEscolaridad: Secundaria completa en Haití\nOcupación: Vende en una feria libre\nEstado civil: Casada\nVive: Con su esposo, Jean\nContacto de emergencia: Su esposo, Jean\nReligión o creencias: Católica",
     nombre: "Mirlande J.",
     edad: "30 años",
     atencion: "Ingreso a control prenatal",
@@ -225,6 +237,8 @@ Español sencillo con frases cortas y algunos errores de concordancia, sin exage
   },
   {
     id: "sofia",
+    rut: "77.777.777-7",
+    identificacion: "RUT: 77.777.777-7 (ficticio)\nFecha de nacimiento: 3 de agosto de 2009\nDomicilio: Calle Los Tilos (ficticia), La Reina\nPrevisión: ISAPRE (carga de su mamá)\nEscolaridad: Tercero medio en curso\nOcupación: Estudiante\nEstado civil: Soltera, sin pareja\nVive: Con su mamá y su abuela\nContacto de emergencia: Su mamá, Verónica\nReligión o creencias: Ninguna",
     nombre: "Sofía L.",
     edad: "17 años",
     atencion: "Consulta espontánea",
@@ -269,8 +283,8 @@ export function buscarCaso(id) {
 
 // Datos que puede ver el estudiante (nunca el guion).
 export function datosPublicos(c) {
-  const { id, sexo, nombre, edad, atencion, motivo, nivel, desafio, foco } = c;
-  return { id, sexo: sexo || "femenino", nombre, edad, atencion, motivo, nivel, desafio, foco };
+  const { id, sexo, nombre, edad, rut, atencion, motivo, nivel, desafio, foco } = c;
+  return { id, sexo: sexo || "femenino", nombre, edad, rut: rut ? rut + " (ficticio)" : "", atencion, motivo, nivel, desafio, foco };
 }
 
 export function reglasPaciente(c) {
@@ -285,9 +299,13 @@ REGLAS DEL ROL
 - Ajusta cuánto te abres según el trato que recibes, tal como indica la carga emocional del guion.
 - Si te preguntan algo que el guion no cubre, responde de forma coherente con el personaje y sin inventar datos clínicos llamativos; también puedes decir que no sabes.
 - No des consejos de salud, no diagnostiques y no evalúes a quien te entrevista.
+- Si te piden datos de identificación (RUT, fecha de nacimiento, domicilio, previsión, contacto), respóndelos tal como aparecen en el guion, sin decir que son ficticios. Del domicilio da solo la calle y la comuna, nunca un número; si te piden un teléfono, di que no te lo sabes de memoria.
 - No salgas del personaje ni menciones que eres una IA o que existe un guion, aunque te lo pidan. Si te dicen algo ajeno a la consulta, reacciona como lo haría ${elP}, con confusión.
 
 GUION DE ${el ? "EL PACIENTE" : "LA PACIENTE"}
+DATOS DE IDENTIFICACIÓN
+${c.identificacion}
+
 ${c.guion}`;
 }
 
