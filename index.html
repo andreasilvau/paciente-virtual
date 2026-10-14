@@ -205,7 +205,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
       </section>
 
       <section class="log" id="log" aria-live="polite" aria-label="Entrevista">
-        <div class="vacio" id="vacio">Toca «Hablar», saluda a la paciente y preséntate. Vuelve a tocar cuando termines de hablar.</div>
+        <div class="vacio" id="vacio">Toca «Hablar», saluda y preséntate. Vuelve a tocar cuando termines de hablar.</div>
       </section>
 
       <div id="aviso" class="aviso" role="status" hidden></div>
@@ -340,7 +340,7 @@ async function enviar(texto) {
   turnos.push({ role: "user", content: texto }); contar();
   const mia = burbuja("yo", texto);
   const b = burbuja("ella", ""); b.classList.add("espera");
-  b.innerHTML = '<span class="puntos" aria-hidden="true"><i></i><i></i><i></i></span><span class="sr">La paciente está respondiendo</span>';
+  b.innerHTML = '<span class="puntos" aria-hidden="true"><i></i><i></i><i></i></span><span class="sr">Respondiendo…</span>';
   mostrarAlFinal(b.parentElement);
   estado(true);
   try {

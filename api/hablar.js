@@ -1,6 +1,7 @@
 // Convierte la respuesta de la paciente en voz.
 // Si existe ELEVENLABS_API_KEY usa ElevenLabs; si no, usa Azure Speech con voz chilena.
 import { error, escaparXml, verificarAcceso } from "./_lib.js";
+import { CASOS } from "./_casos.js";
 
 const AUDIO = { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" };
 
@@ -64,7 +65,9 @@ async function conAzure(texto, caso) {
   const clave = process.env.AZURE_SPEECH_KEY;
   const region = process.env.AZURE_SPEECH_REGION;
   if (!clave || !region) return error(500, "Falta configurar la voz: ELEVENLABS_API_KEY, o AZURE_SPEECH_KEY y AZURE_SPEECH_REGION.");
-  const voz = vozDe(caso, "AZURE_VOICE", "AZURE_VOICE") || "es-CL-CatalinaNeural";
+  // Sin voz configurada, Azure usa la voz chilena femenina (Catalina) o masculina (Lorenzo) según el personaje.
+  const masculino = CASOS.some(c => c.id === caso && c.sexo === "masculino");
+  const voz = vozDe(caso, "AZURE_VOICE", masculino ? "AZURE_VOICE_MASCULINA" : "AZURE_VOICE") || (masculino ? "es-CL-LorenzoNeural" : "es-CL-CatalinaNeural");
   const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="es-CL"><voice name="${escaparXml(voz)}">${escaparXml(texto)}</voice></speak>`;
   const regionLimpia = region.trim().toLowerCase().replace(/\s+/g, "");
   let r;
