@@ -208,7 +208,7 @@ function desbloquearAudio() {
   reproductor.play().catch(() => {});
 }
 async function hablar(texto) {
-  if (!vozActiva || !servicios.azure) return;
+  if (!vozActiva || !servicios.voz) return;
   try {
     const r = await api("/api/hablar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto }) });
     const url = URL.createObjectURL(await r.blob());
@@ -216,7 +216,7 @@ async function hablar(texto) {
     reproductor.onended = () => URL.revokeObjectURL(url);
     await reproductor.play();
   } catch (e) {
-    const detalle = e && e.message && e.message.startsWith("Azure") ? " " + e.message
+    const detalle = e && e.message && /^(Azure|ElevenLabs)/.test(e.message) ? " " + e.message
       : e && e.name === "NotAllowedError" ? " El navegador bloqueó el audio: toca «Hablar» o «Enviar» y vuelve a intentarlo." : "";
     mostrarAviso("No se pudo reproducir la voz; la respuesta queda escrita." + detalle);
   }
@@ -322,7 +322,7 @@ $("btnNueva").onclick = () => {
     if (!servicios.codigo) faltan.push("código de acceso");
     if (!servicios.claude) faltan.push("Claude");
     if (!servicios.whisper) { faltan.push("Whisper"); $("btnMic").hidden = true; }
-    if (!servicios.azure) { faltan.push("voz de Azure"); $("btnVoz").hidden = true; }
+    if (!servicios.voz) { faltan.push("voz (ElevenLabs o Azure)"); $("btnVoz").hidden = true; }
     if (faltan.length) mostrarAviso("Falta configurar en Vercel: " + faltan.join(", ") + ".");
   } catch (e) { mostrarAviso("No se pudo conectar con el servidor."); }
 })();
