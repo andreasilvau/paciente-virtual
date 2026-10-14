@@ -18,14 +18,26 @@ function encabezados(extra = {}) {
   return h;
 }
 
+// Explica qué clave se pegó, sin mostrarla.
+function diagnosticoClave() {
+  const base = "Supabase rechazó la clave de SUPABASE_SECRET_KEY en Vercel. ";
+  if (CLAVE_SB.startsWith("sb_publishable_")) return base + "Pegaste la clave publicable (sb_publishable_…); se necesita la secreta (sb_secret_…), en Project Settings → API Keys.";
+  if (CLAVE_SB.startsWith("eyJ")) {
+    try {
+      const rol = JSON.parse(Buffer.from(CLAVE_SB.split(".")[1], "base64url").toString()).role;
+      if (rol === "anon") return base + "Pegaste la clave anon; se necesita la service_role o, mejor, la secreta (sb_secret_…), en Project Settings → API Keys.";
+    } catch {}
+  }
+  if (!CLAVE_SB.startsWith("sb_secret_") && !CLAVE_SB.startsWith("eyJ")) return base + "No parece una clave de Supabase: debe empezar con sb_secret_. Cópiala de nuevo, sin espacios ni comillas.";
+  return base + "Revisa que sea la clave secreta de este mismo proyecto (paciente-virtual-conversacional) y que no se haya regenerado.";
+}
+
 async function pedirSupabase(ruta, opciones = {}) {
   const r = await fetch(`${URL_SB}/rest/v1/${ruta}`, { ...opciones, headers: encabezados(opciones.headers) });
   if (!r.ok) {
     const detalle = (await r.text().catch(() => "")).slice(0, 400);
     console.error("Supabase", r.status, detalle);
-    throw new Error(r.status === 401 || r.status === 403
-      ? "Supabase rechazó la clave. Revisa SUPABASE_SECRET_KEY en Vercel."
-      : "No se pudo leer la base de datos de Supabase.");
+    throw new Error(r.status === 401 || r.status === 403 ? diagnosticoClave() : "No se pudo leer la base de datos de Supabase.");
   }
   return r.status === 204 ? null : r.json();
 }
@@ -44,16 +56,20 @@ const VIGENCIA_MS = 20_000;
 export function olvidarCache() { cache = null; }
 
 // Todos los personajes, ordenados. Con incluirInactivos=false, solo los activos.
-export async function listarCasos({ incluirInactivos = false } = {}) {
+// Con usarRespaldo=true (estudiantes), si Supabase falla se usan los personajes del archivo.
+export async function listarCasos({ incluirInactivos = false, usarRespaldo = false } = {}) {
   let todos;
   if (!supabaseConfigurado) todos = CASOS.map(desdeArchivo);
   else if (cache && Date.now() - cacheHora < VIGENCIA_MS) todos = cache;
-  else { todos = await pedirSupabase("casos?select=*&order=orden.asc,id.asc"); cache = todos; cacheHora = Date.now(); }
+  else {
+    try { todos = await pedirSupabase("casos?select=*&order=orden.asc,id.asc"); cache = todos; cacheHora = Date.now(); }
+    catch (e) { if (!usarRespaldo) throw e; todos = CASOS.map(desdeArchivo); }
+  }
   return incluirInactivos ? todos : todos.filter(c => c.activo);
 }
 
 export async function buscarCaso(id) {
-  const activos = await listarCasos();
+  const activos = await listarCasos({ usarRespaldo: true });
   return activos.find(c => c.id === id) || activos.find(c => c.id === "camila") || activos[0] || null;
 }
 

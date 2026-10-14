@@ -3,7 +3,7 @@ import { listarCasos, datosPublicos, supabaseConfigurado } from "./_datos.js";
 
 export async function GET() {
   let casos = [], errorCasos = "";
-  try { casos = (await listarCasos()).map(datosPublicos); } catch (e) { errorCasos = e.message; }
+  try { casos = (await listarCasos({ usarRespaldo: true })).map(datosPublicos); } catch (e) { errorCasos = e.message; }
   return Response.json({
     casos,
     errorCasos,
