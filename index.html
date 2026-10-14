@@ -64,8 +64,22 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 #btnMic.grabando::before { content: ""; display: inline-block; width: .7em; height: .7em; border-radius: 50%; background: currentColor; margin-right: .5em; vertical-align: middle; }
 @media (prefers-reduced-motion: no-preference) { #btnMic.grabando::before { animation: late 1s ease-in-out infinite; } @keyframes late { 50% { opacity: .3; } } }
 
+.inicio { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 24px; align-items: center; }
+.inicio .mascota { width: 100%; max-width: 220px; height: auto; justify-self: center; }
+.bienvenida { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.globo { position: relative; background: var(--soft); color: var(--ink); border-radius: 14px; padding: 12px 16px; font-size: 1.02rem; max-width: 42ch; }
+.globo::before { content: ""; position: absolute; left: -9px; top: 22px; border: 9px solid transparent; border-left: 0; border-right-color: var(--soft); }
 .acceso { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .acceso input { width: 100%; }
+@media (max-width: 560px) {
+  .inicio { grid-template-columns: 1fr; gap: 12px; }
+  .inicio .mascota { max-width: 150px; }
+  .globo::before { left: 50%; top: -9px; transform: translateX(-50%); border: 9px solid transparent; border-top: 0; border-bottom-color: var(--soft); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .inicio .mascota { animation: saludo 2.4s ease-in-out 0.3s 1; transform-origin: 50% 90%; }
+  @keyframes saludo { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-4deg); } 40% { transform: rotate(3deg); } 60% { transform: rotate(-2deg); } }
+}
 </style>
 </head>
 <body>
@@ -76,11 +90,17 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
     <p class="lead">Estás en el box. Conduce la entrevista como en una atención real: la paciente responde según lo que le preguntes y cómo la trates.</p>
   </header>
 
-  <form class="acceso" id="formAcceso" hidden>
-    <label class="label" for="codigo">Código de acceso</label>
-    <input type="password" id="codigo" autocomplete="off" placeholder="Te lo entrega tu docente">
-    <button class="primario" type="submit">Entrar</button>
-  </form>
+  <section class="inicio" id="inicio" hidden>
+    <img class="mascota" src="/mascota.webp" width="440" height="536" alt="Robot con delantal clínico saludando con la mano">
+    <div class="bienvenida">
+      <p class="globo">¡Hola! Antes de entrar al box, ingresa el código que te entregó tu docente.</p>
+      <form class="acceso" id="formAcceso">
+        <label class="label" for="codigo">Código de acceso</label>
+        <input type="password" id="codigo" autocomplete="off" placeholder="Te lo entrega tu docente">
+        <button class="primario" type="submit">Entrar</button>
+      </form>
+    </div>
+  </section>
 
   <div id="app" hidden>
     <div style="display:flex;flex-direction:column;gap:16px">
@@ -148,11 +168,11 @@ async function api(ruta, opciones = {}) {
 }
 
 /* Acceso */
-function salir() { codigo = ""; guardar("codigo", ""); $("app").hidden = true; $("formAcceso").hidden = false; }
+function salir() { codigo = ""; guardar("codigo", ""); $("app").hidden = true; $("inicio").hidden = false; }
 $("formAcceso").addEventListener("submit", e => {
   e.preventDefault();
   codigo = $("codigo").value.trim(); if (!codigo) return;
-  guardar("codigo", codigo); $("formAcceso").hidden = true; $("app").hidden = false;
+  guardar("codigo", codigo); $("inicio").hidden = true; $("app").hidden = false;
 });
 
 /* Conversación */
@@ -316,7 +336,7 @@ $("btnNueva").onclick = () => {
 (async () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
   codigo = leer("codigo") || "";
-  if (codigo) $("app").hidden = false; else $("formAcceso").hidden = false;
+  if (codigo) $("app").hidden = false; else $("inicio").hidden = false;
   try {
     const d = await (await fetch("/api/estado")).json();
     servicios = d.servicios || {};
