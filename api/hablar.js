@@ -7,10 +7,10 @@ const AUDIO = { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" };
 async function conElevenLabs(texto) {
   const voz = (process.env.ELEVENLABS_VOICE_ID || "").trim();
   if (!voz) return error(500, "ElevenLabs: falta configurar ELEVENLABS_VOICE_ID en Vercel.");
-  const modelo = process.env.ELEVENLABS_MODEL || "eleven_multilingual_v2";
+  const modelo = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
   let r;
   try {
-    r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}?output_format=mp3_44100_128`, {
+    r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}/stream?output_format=mp3_44100_128`, {
       method: "POST",
       headers: {
         "xi-api-key": process.env.ELEVENLABS_API_KEY.trim(),
@@ -45,7 +45,7 @@ async function conElevenLabs(texto) {
 
 // Algunos modelos no aceptan language_code; se reintenta una vez sin él.
 async function conElevenLabsSinIdioma(texto, voz, modelo) {
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}?output_format=mp3_44100_128`, {
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}/stream?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY.trim(), "Content-Type": "application/json", Accept: "audio/mpeg" },
     body: JSON.stringify({ text: texto, model_id: modelo, voice_settings: { stability: 0.4, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true } }),
@@ -98,5 +98,14 @@ export async function POST(request) {
   try { texto = String((await request.json()).texto || "").trim().slice(0, 1500); } catch { return error(400, "Solicitud inválida."); }
   if (!texto) return error(400, "No hay texto que leer.");
 
+  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto) : conAzure(texto);
+}
+
+// Versión para que el navegador reproduzca el audio mientras va llegando.
+export async function GET(request) {
+  const denegado = verificarAcceso(request);
+  if (denegado) return denegado;
+  const texto = String(new URL(request.url).searchParams.get("texto") || "").trim().slice(0, 1500);
+  if (!texto) return error(400, "No hay texto que leer.");
   return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto) : conAzure(texto);
 }

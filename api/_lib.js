@@ -8,7 +8,8 @@ export function error(status, mensaje) {
 export function verificarAcceso(request) {
   const esperado = process.env.ACCESS_CODE;
   if (!esperado) return error(500, "Falta configurar ACCESS_CODE en Vercel.");
-  const recibido = request.headers.get("x-codigo") || "";
+  // El código llega en el encabezado, o en la dirección cuando el navegador pide el audio directamente.
+  const recibido = request.headers.get("x-codigo") || new URL(request.url).searchParams.get("c") || "";
   if (recibido.trim() !== esperado.trim()) return error(401, "El código de acceso no es correcto.");
   return null;
 }

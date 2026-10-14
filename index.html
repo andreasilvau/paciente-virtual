@@ -210,6 +210,11 @@ function desbloquearAudio() {
 async function hablar(texto) {
   if (!vozActiva || !servicios.voz) return;
   try {
+    // El audio se reproduce mientras va llegando, sin esperar el archivo completo.
+    reproductor.src = "/api/hablar?" + new URLSearchParams({ texto, c: codigo });
+    try { await reproductor.play(); return; }
+    catch (e) { if (e && e.name === "NotAllowedError") throw e; }
+    // Si falló, se pide de nuevo de la forma normal para mostrar el motivo exacto.
     const r = await api("/api/hablar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto }) });
     const url = URL.createObjectURL(await r.blob());
     reproductor.src = url;
