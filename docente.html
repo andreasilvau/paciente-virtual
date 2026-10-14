@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Personajes · Paciente Virtual Conversacional</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
+<style>
+:root {
+  --bg: #F2F6F5; --surface: #FFFFFF; --ink: #15282A; --muted: #586C6E; --line: #D3DEDB;
+  --accent: #0E6B67; --on-accent: #FFFFFF; --soft: #DAEDE9; --warn: #9A4A12; --warn-bg: #FBEBDD; --rec: #B3261E; --ok: #1F7A3A;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0F1919; --surface: #172324; --ink: #E2ECEA; --muted: #94A8A6; --line: #2A3B3B;
+  --accent: #5FC6BC; --on-accent: #0B1A1A; --soft: #1D3837; --warn: #F0B281; --warn-bg: #3A2718; --rec: #F2867E; --ok: #7BD49A; color-scheme: dark } }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+[hidden] { display: none !important; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: calc(20px + env(safe-area-inset-top, 0px)) 48px; display: flex; flex-direction: column; gap: 18px; }
+h1 { font: 700 1.6rem/1.15 var(--display); margin: 0; }
+h2 { font: 700 1.1rem/1.2 var(--display); margin: 0; }
+p { margin: 0; }
+.label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lead { color: var(--muted); max-width: 70ch; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: var(--ink); }
+button { font-weight: 700; font-size: .95rem; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); padding: 9px 14px; cursor: pointer; }
+button.primario { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type=text], input[type=password], input[type=number], select, textarea { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; }
+textarea { resize: vertical; min-height: 90px; line-height: 1.45; font-size: .95rem; }
+.aviso { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 10px 14px; }
+.caja { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.acceso { max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start; }
+.lista { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.item { text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; font-weight: 400; }
+.item b { font-weight: 700; }
+.item small { color: var(--muted); font-size: .8rem; }
+.item[aria-current="true"] { border-color: var(--accent); background: var(--soft); }
+.item.inactivo b { text-decoration: line-through; color: var(--muted); }
+.punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.con-voz { background: var(--ok); } .sin-voz { background: var(--line); }
+
+form { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 16px; margin: 0; background: var(--surface); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px 16px; min-width: 0; }
+legend { font: 700 1rem var(--display); padding: 0 6px; }
+.campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.campo.ancho { grid-column: 1 / -1; }
+.campo label { font-weight: 700; font-size: .9rem; }
+.ayuda { color: var(--muted); font-size: .82rem; }
+.fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.check { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.barra { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#estadoGuardado { color: var(--muted); }
+#estadoGuardado.ok { color: var(--ok); font-weight: 700; }
+#estadoGuardado.err { color: var(--rec); font-weight: 700; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .lista { position: static; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <span class="label">Paciente Virtual Conversacional · Docentes</span>
+    <h1>Personajes</h1>
+    <p class="lead">Edita las capas de cada personaje, elige su voz y decide cuáles ven los estudiantes. Los cambios llegan a la aplicación en menos de un minuto.</p>
+  </header>
+
+  <form class="caja acceso" id="formAcceso">
+    <label class="label" for="codigoDocente">Código de docente</label>
+    <input type="password" id="codigoDocente" autocomplete="off">
+    <button class="primario" type="submit">Entrar</button>
+  </form>
+
+  <div id="aviso" class="aviso" role="status" hidden></div>
+
+  <div class="layout" id="panel" hidden>
+    <nav class="lista" aria-label="Personajes">
+      <div id="lista" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button type="button" id="btnNuevo">+ Nuevo personaje</button>
+      <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
+    </nav>
+
+    <form id="editor" autocomplete="off">
+      <fieldset>
+        <legend>Datos que ve el estudiante</legend>
+        <div class="campo"><label for="f_id">Identificador</label><input type="text" id="f_id" placeholder="ej. rosa-58"><span class="ayuda">Solo minúsculas sin tildes, números o guiones. No se puede cambiar después.</span></div>
+        <div class="campo"><label for="f_nombre">Nombre</label><input type="text" id="f_nombre"></div>
+        <div class="campo"><label for="f_sexo">Sexo</label><select id="f_sexo"><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
+        <div class="campo"><label for="f_edad">Edad</label><input type="text" id="f_edad" placeholder="ej. 32 años"></div>
+        <div class="campo"><label for="f_rut">RUT ficticio</label><input type="text" id="f_rut" placeholder="ej. 88.888.888-8"></div>
+        <div class="campo"><label for="f_atencion">Tipo de atención</label><input type="text" id="f_atencion"></div>
+        <div class="campo ancho"><label for="f_motivo">Motivo registrado en admisión</label><input type="text" id="f_motivo"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Diseño docente</legend>
+        <div class="campo"><label for="f_nivel_dificultad">Nivel</label><select id="f_nivel_dificultad"><option>Básico</option><option>Intermedio</option><option>Avanzado</option></select></div>
+        <div class="campo"><label for="f_foco_cicaa">Foco CICAA</label><input type="text" id="f_foco_cicaa" placeholder="ej. Conectar · Identificar"></div>
+        <div class="campo"><label for="f_orden">Orden en la lista</label><input type="number" id="f_orden" step="10"></div>
+        <div class="campo"><label class="check"><input type="checkbox" id="f_activo"> Visible para estudiantes</label></div>
+        <div class="campo ancho"><label for="f_desafio">Desafío comunicacional</label><input type="text" id="f_desafio"><span class="ayuda">Lo ve el estudiante al elegir y lo usa la retroalimentación final.</span></div>
+        <div class="campo ancho"><label for="f_carreras">Carreras</label><input type="text" id="f_carreras" placeholder="Obstetricia, Enfermería"><span class="ayuda">Separadas por coma.</span></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Capas del personaje (solo las lee el servidor)</legend>
+        <div class="campo ancho"><label for="f_identificacion">Datos de identificación</label><textarea id="f_identificacion" rows="6"></textarea><span class="ayuda">RUT, nacimiento, domicilio sin número, previsión, escolaridad, ocupación, contacto. Todo ficticio.</span></div>
+        <div class="campo ancho"><label for="f_identidad">Identidad</label><textarea id="f_identidad" rows="3"></textarea></div>
+        <div class="campo ancho"><label for="f_guion_clinico">Cómo parte la consulta</label><textarea id="f_guion_clinico" rows="3"></textarea></div>
+        <div class="campo ancho"><label for="f_info_condicionada">Lo que cuenta solo si se lo preguntan</label><textarea id="f_info_condicionada" rows="9"></textarea><span class="ayuda">Incluye la información clave y bajo qué condición la revela.</span></div>
+        <div class="campo ancho"><label for="f_carga_emocional">Carga emocional</label><textarea id="f_carga_emocional" rows="6"></textarea><span class="ayuda">Qué siente, qué la hace abrirse y qué la hace cerrarse.</span></div>
+        <div class="campo ancho"><label for="f_forma_de_hablar">Forma de hablar</label><textarea id="f_forma_de_hablar" rows="3"></textarea></div>
+        <div class="campo ancho"><label for="f_reglas_adicionales">Reglas adicionales</label><textarea id="f_reglas_adicionales" rows="2"></textarea><span class="ayuda">Resguardos propios del caso (por ejemplo, sin detalles gráficos).</span></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Voz</legend>
+        <div class="campo ancho"><label for="f_voz_lista">Voz de ElevenLabs</label>
+          <select id="f_voz_lista"><option value="">Cargando voces…</option></select>
+          <span class="ayuda" id="ayudaVoces">Aparecen las voces de tu cuenta de ElevenLabs. Para sumar una, agrégala a «My Voices» desde la Voice Library y recarga esta página.</span>
+        </div>
+        <div class="campo ancho"><label for="f_voz_id">ID de la voz</label><input type="text" id="f_voz_id" placeholder="Se completa al elegir de la lista; también puedes pegarlo"></div>
+        <div class="campo ancho"><label for="f_frase">Frase de prueba</label><input type="text" id="f_frase"></div>
+        <div class="campo ancho fila">
+          <button type="button" id="btnMuestra">Escuchar muestra</button>
+          <button type="button" id="btnProbar">Probar con la frase</button>
+          <span class="ayuda" id="estadoVoz"></span>
+        </div>
+      </fieldset>
+
+      <div class="barra">
+        <button class="primario" type="submit" id="btnGuardar">Guardar cambios</button>
+        <span id="estadoGuardado" role="status"></span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const CAMPOS = ["nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "foco_cicaa", "orden", "activo", "desafio", "carreras",
+  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "voz_id"];
+let codigo = "", casos = [], voces = [], actual = null, nuevo = false, cambios = false, editable = true;
+const audio = new Audio();
+const guardar = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };
+const leer = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
+function aviso(t) { $("aviso").textContent = t || ""; $("aviso").hidden = !t; }
+
+async function api(ruta, opciones = {}) {
+  const r = await fetch(ruta, { ...opciones, headers: { ...(opciones.headers || {}), "x-docente": codigo } });
+  if (r.status === 401) { salir(); throw new Error("El código de docente no es correcto."); }
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || "No se pudo conectar."); }
+  return r;
+}
+
+function salir() { codigo = ""; guardar("docente", ""); $("panel").hidden = true; $("formAcceso").hidden = false; }
+$("btnSalir").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return; salir(); };
+$("formAcceso").addEventListener("submit", e => { e.preventDefault(); codigo = $("codigoDocente").value.trim(); if (codigo) cargar(); });
+
+async function cargar() {
+  aviso("");
+  try {
+    const d = await (await api("/api/docente")).json();
+    casos = d.casos || []; editable = d.editable;
+    guardar("docente", codigo);
+    $("formAcceso").hidden = true; $("panel").hidden = false;
+    if (!editable) aviso("Estás viendo los personajes del archivo de respaldo. Para editarlos, configura SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel.");
+    pintarLista();
+    abrir(actual ? casos.find(c => c.id === actual.id) || casos[0] : casos[0]);
+    cargarVoces();
+  } catch (e) { aviso(e.message); }
+}
+
+function pintarLista() {
+  const cont = $("lista"); cont.textContent = "";
+  for (const c of casos) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "item" + (c.activo ? "" : " inactivo");
+    b.setAttribute("aria-current", String(actual && actual.id === c.id && !nuevo));
+    const t = document.createElement("b"); t.textContent = c.nombre;
+    const s = document.createElement("small");
+    const p = document.createElement("span"); p.className = "punto " + (c.voz_id ? "con-voz" : "sin-voz"); p.title = c.voz_id ? "Tiene voz propia" : "Usa la voz general";
+    s.append(p, `${c.nivel_dificultad} · ${c.edad}${c.activo ? "" : " · oculto"}`);
+    b.append(t, s);
+    b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Cambiar de personaje igual?")) return; abrir(c); };
+    cont.append(b);
+  }
+}
+
+function abrir(c) {
+  nuevo = !c; actual = c || null; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
+  $("f_id").value = c ? c.id : ""; $("f_id").disabled = Boolean(c);
+  for (const k of CAMPOS) {
+    const el = $("f_" + k); if (!el) continue;
+    const v = c ? c[k] : (k === "activo" ? true : k === "orden" ? (casos.length + 1) * 10 : k === "nivel_dificultad" ? "Intermedio" : k === "sexo" ? "femenino" : "");
+    if (el.type === "checkbox") el.checked = Boolean(v);
+    else el.value = Array.isArray(v) ? v.join(", ") : (v ?? "");
+  }
+  $("f_frase").value = c ? fraseDe(c) : "Hola, buenas tardes.";
+  sincronizarListaVoz();
+  for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && Boolean(c));
+  $("f_frase").disabled = false; $("f_voz_lista").disabled = !editable && false;
+  $("btnGuardar").disabled = !editable;
+  pintarLista();
+  window.scrollTo(0, 0);
+}
+function fraseDe(c) {
+  const m = String(c.guion_clinico || "").match(/[“"«]([^"”»]{6,160})[”"»]/);
+  return m ? m[1] : "Hola, buenas tardes. Vengo a la consulta.";
+}
+$("btnNuevo").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Crear otro igual?")) return; abrir(null); $("f_id").focus(); };
+$("editor").addEventListener("input", () => { cambios = true; $("estadoGuardado").textContent = "Cambios sin guardar"; $("estadoGuardado").className = ""; });
+window.addEventListener("beforeunload", e => { if (cambios) { e.preventDefault(); e.returnValue = ""; } });
+
+/* Voces */
+async function cargarVoces() {
+  try {
+    voces = (await (await api("/api/docente?voces=1")).json()).voces || [];
+    if (!voces.length) $("ayudaVoces").textContent = "No se encontraron voces: revisa que ELEVENLABS_API_KEY esté configurada en Vercel. También puedes pegar el ID a mano.";
+  } catch (e) { voces = []; $("ayudaVoces").textContent = e.message + " Puedes pegar el ID a mano."; }
+  sincronizarListaVoz();
+}
+function sincronizarListaVoz() {
+  const sel = $("f_voz_lista"), id = $("f_voz_id").value.trim();
+  sel.textContent = "";
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Usar la voz general"; sel.append(o0);
+  for (const v of voces) {
+    const o = document.createElement("option"); o.value = v.id; o.textContent = v.nombre + (v.detalle ? ` (${v.detalle})` : ""); sel.append(o);
+  }
+  if (id && !voces.some(v => v.id === id)) { const o = document.createElement("option"); o.value = id; o.textContent = "ID pegado a mano: " + id; sel.append(o); }
+  sel.value = id;
+}
+$("f_voz_lista").addEventListener("change", () => { $("f_voz_id").value = $("f_voz_lista").value; cambios = true; $("estadoGuardado").textContent = "Cambios sin guardar"; });
+$("f_voz_id").addEventListener("change", sincronizarListaVoz);
+$("btnMuestra").onclick = () => {
+  const v = voces.find(x => x.id === $("f_voz_id").value.trim());
+  if (!v || !v.vista_previa) { $("estadoVoz").textContent = "Esta voz no tiene muestra; usa «Probar con la frase»."; return; }
+  audio.src = v.vista_previa; audio.play().catch(() => { $("estadoVoz").textContent = "El navegador no pudo reproducir la muestra."; });
+  $("estadoVoz").textContent = "Muestra de ElevenLabs (puede estar en inglés).";
+};
+$("btnProbar").onclick = async () => {
+  const voz = $("f_voz_id").value.trim();
+  $("btnProbar").disabled = true; $("estadoVoz").textContent = "Generando…";
+  try {
+    const r = await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accion: "probar", voz_id: voz || undefined, caso: actual ? actual.id : "", texto: $("f_frase").value }) });
+    const url = URL.createObjectURL(await r.blob());
+    audio.src = url; audio.onended = () => URL.revokeObjectURL(url);
+    await audio.play();
+    $("estadoVoz").textContent = voz ? "Así suena esta voz." : "Así suena la voz general.";
+  } catch (e) { $("estadoVoz").textContent = e.message; }
+  finally { $("btnProbar").disabled = false; }
+};
+
+/* Guardar */
+$("editor").addEventListener("submit", async e => {
+  e.preventDefault();
+  const datos = {};
+  for (const k of CAMPOS) { const el = $("f_" + k); if (el) datos[k] = el.type === "checkbox" ? el.checked : el.value; }
+  datos.carreras = String(datos.carreras || "").split(",").map(s => s.trim()).filter(Boolean);
+  const id = (nuevo ? $("f_id").value : actual.id).trim().toLowerCase();
+  $("btnGuardar").disabled = true; $("estadoGuardado").textContent = "Guardando…"; $("estadoGuardado").className = "";
+  try {
+    const r = await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, nuevo, datos }) });
+    const { caso } = await r.json();
+    const i = casos.findIndex(c => c.id === caso.id);
+    if (i >= 0) casos[i] = caso; else casos.push(caso);
+    casos.sort((a, b) => a.orden - b.orden || a.id.localeCompare(b.id));
+    cambios = false; abrir(caso);
+    $("estadoGuardado").textContent = "Guardado. Los estudiantes lo verán en menos de un minuto."; $("estadoGuardado").className = "ok";
+  } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; }
+  finally { $("btnGuardar").disabled = !editable; }
+});
+
+codigo = leer("docente") || "";
+if (codigo) cargar();
+</script>
+</body>
+</html>

@@ -63,6 +63,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #feedback { white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px; }
 .nota { color: var(--muted); font-size: .88rem; }
+.nota a { color: var(--accent); font-weight: 700; }
 
 .compositor { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 8px; }
 .compositor .fila { flex-wrap: nowrap; align-items: flex-end; }
@@ -168,6 +169,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         <input type="password" id="codigo" autocomplete="off" placeholder="Te lo entrega tu docente">
         <button class="primario" type="submit">Entrar</button>
       </form>
+      <p class="nota">¿Eres docente? <a href="/docente.html">Edita los personajes</a>.</p>
     </div>
   </section>
 
@@ -247,7 +249,7 @@ let codigo = "", turnos = [], ocupado = false, inicio = null, vozActiva = true, 
 let grabador = null, trozos = [], corteGrabacion = null;
 const reproductor = new Audio();
 let audioDesbloqueado = false;
-let casos = [], casoActual = null;
+let casos = [], casoActual = null, errorCasos = "";
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -273,6 +275,7 @@ function mostrar(pantalla) {
 function claseNivel(n) { return "nivel nivel-" + String(n || "").toLowerCase().normalize("NFD").replace(/[^a-z]/g, ""); }
 function pintarTarjetas() {
   const cont = $("tarjetas"); cont.textContent = "";
+  if (!casos.length) { const v = document.createElement("p"); v.className = "aviso"; v.textContent = errorCasos || "Todavía no hay pacientes disponibles. Avísale a tu docente."; cont.append(v); return; }
   for (const c of casos) {
     const t = document.createElement("article"); t.className = "tarjeta";
     const cab = document.createElement("div"); cab.className = "cabeza";
@@ -544,7 +547,7 @@ $("btnSalir").onclick = () => {
   try {
     const d = await (await fetch("/api/estado")).json();
     servicios = d.servicios || {};
-    casos = d.casos || [];
+    casos = d.casos || []; errorCasos = d.errorCasos || "";
     pintarTarjetas();
     const faltan = [];
     if (!servicios.codigo) faltan.push("código de acceso");

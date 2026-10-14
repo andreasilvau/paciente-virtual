@@ -1,6 +1,7 @@
 // Respuestas de la paciente y retroalimentación final, con la API de Claude.
 import { error, verificarAcceso } from "./_lib.js";
-import { buscarCaso, reglasPaciente, reglasFeedback } from "./_casos.js";
+import { buscarCaso } from "./_datos.js";
+import { reglasPaciente, reglasFeedback } from "./_reglas.js";
 
 const MODELO_PACIENTE = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const MODELO_FEEDBACK = process.env.CLAUDE_MODEL_FEEDBACK || "claude-sonnet-5-5";
@@ -47,9 +48,10 @@ export async function POST(request) {
   let body;
   try { body = await request.json(); } catch { return error(400, "Solicitud inválida."); }
   const turnos = limpiarTurnos(body.turnos);
-  const caso = buscarCaso(String(body.caso || ""));
 
   try {
+    const caso = await buscarCaso(String(body.caso || ""));
+    if (!caso) return error(500, "No hay personajes activos.");
     if (body.modo === "feedback") {
       if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
       const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
@@ -62,6 +64,7 @@ export async function POST(request) {
     if (!texto) return error(502, "La paciente no alcanzó a responder. Vuelve a intentarlo.");
     return Response.json({ texto });
   } catch (e) {
+    if (/Supabase/.test(e.message)) return error(502, e.message);
     return error(502, e.message === "limite"
       ? "Se alcanzó el límite de uso de la API de Claude. Espera un momento."
       : "No se pudo obtener respuesta de Claude. Vuelve a intentarlo.");

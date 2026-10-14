@@ -1,18 +1,22 @@
 // Convierte la respuesta de la paciente en voz.
 // Si existe ELEVENLABS_API_KEY usa ElevenLabs; si no, usa Azure Speech con voz chilena.
 import { error, escaparXml, verificarAcceso } from "./_lib.js";
-import { CASOS } from "./_casos.js";
+import { buscarCaso } from "./_datos.js";
 
 const AUDIO = { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" };
 
 // Cada personaje puede tener su propia voz: ELEVENLABS_VOICE_<ID> (por ejemplo ELEVENLABS_VOICE_JAVIERA).
-function vozDe(caso, propia, general) {
-  const id = String(caso || "").toUpperCase().replace(/[^A-Z]/g, "");
+// Orden para elegir la voz: la forzada (prueba de docente), la guardada en Supabase,
+// la variable propia del personaje en Vercel y, al final, la voz general.
+function vozDe(caso, propia, general, forzada) {
+  if (forzada) return String(forzada).trim();
+  if (caso && caso.voz_id && propia === "ELEVENLABS_VOICE") return caso.voz_id.trim();
+  const id = String(caso ? caso.id : "").toUpperCase().replace(/[^A-Z]/g, "");
   return ((id && process.env[`${propia}_${id}`]) || process.env[general] || "").trim();
 }
 
-async function conElevenLabs(texto, caso) {
-  const voz = vozDe(caso, "ELEVENLABS_VOICE", "ELEVENLABS_VOICE_ID");
+async function conElevenLabs(texto, caso, forzada) {
+  const voz = vozDe(caso, "ELEVENLABS_VOICE", "ELEVENLABS_VOICE_ID", forzada);
   if (!voz) return error(500, "ElevenLabs: falta configurar ELEVENLABS_VOICE_ID en Vercel.");
   const modelo = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
   let r;
@@ -61,13 +65,13 @@ async function conElevenLabsSinIdioma(texto, voz, modelo) {
   return new Response(r.body, { headers: AUDIO });
 }
 
-async function conAzure(texto, caso) {
+async function conAzure(texto, caso, forzada) {
   const clave = process.env.AZURE_SPEECH_KEY;
   const region = process.env.AZURE_SPEECH_REGION;
   if (!clave || !region) return error(500, "Falta configurar la voz: ELEVENLABS_API_KEY, o AZURE_SPEECH_KEY y AZURE_SPEECH_REGION.");
   // Sin voz configurada, Azure usa la voz chilena femenina (Catalina) o masculina (Lorenzo) según el personaje.
-  const masculino = CASOS.some(c => c.id === caso && c.sexo === "masculino");
-  const voz = vozDe(caso, "AZURE_VOICE", masculino ? "AZURE_VOICE_MASCULINA" : "AZURE_VOICE") || (masculino ? "es-CL-LorenzoNeural" : "es-CL-CatalinaNeural");
+  const masculino = Boolean(caso && caso.sexo === "masculino");
+  const voz = vozDe(caso, "AZURE_VOICE", masculino ? "AZURE_VOICE_MASCULINA" : "AZURE_VOICE", forzada) || (masculino ? "es-CL-LorenzoNeural" : "es-CL-CatalinaNeural");
   const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="es-CL"><voice name="${escaparXml(voz)}">${escaparXml(texto)}</voice></speak>`;
   const regionLimpia = region.trim().toLowerCase().replace(/\s+/g, "");
   let r;
@@ -107,7 +111,7 @@ export async function POST(request) {
   try { const b = await request.json(); texto = String(b.texto || "").trim().slice(0, 1500); caso = b.caso; } catch { return error(400, "Solicitud inválida."); }
   if (!texto) return error(400, "No hay texto que leer.");
 
-  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto, caso) : conAzure(texto, caso);
+  return sintetizar(texto, caso);
 }
 
 // Versión para que el navegador reproduzca el audio mientras va llegando.
@@ -117,5 +121,12 @@ export async function GET(request) {
   const q = new URL(request.url).searchParams;
   const texto = String(q.get("texto") || "").trim().slice(0, 1500), caso = q.get("caso");
   if (!texto) return error(400, "No hay texto que leer.");
-  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto, caso) : conAzure(texto, caso);
+  return sintetizar(texto, caso);
+}
+
+// Convierte texto en audio con la voz del personaje (o con una voz forzada, para que la docente pruebe voces).
+export async function sintetizar(texto, casoId, forzada) {
+  let caso = null;
+  try { caso = casoId ? await buscarCaso(String(casoId)) : null; } catch { caso = null; }
+  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto, caso, forzada) : conAzure(texto, caso, forzada);
 }

@@ -40,3 +40,19 @@ api/estado.js         indica qué servicios están configurados
 api/_caso.js          guion del caso y reglas del rol
 api/_lib.js           código de acceso y utilidades
 ```
+
+## Personajes en Supabase
+
+Los personajes viven en la tabla `casos` del proyecto de Supabase `paciente-virtual-conversacional` (región São Paulo). Cada capa va en su propia columna: identificación, identidad, cómo parte la consulta, información condicionada, carga emocional, forma de hablar, reglas adicionales y voz (`voz_id`). La tabla tiene RLS activado y sin políticas: solo el servidor, con la clave secreta, puede leerla.
+
+Variables en Vercel:
+
+| Variable | Valor |
+|---|---|
+| `SUPABASE_URL` | `https://ykahennqppthymcwbwlr.supabase.co` |
+| `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API Keys → clave secreta (`sb_secret_…`) |
+| `DOCENTE_CODE` | Código para entrar a `/docente.html`, distinto del de los estudiantes |
+
+Si faltan las variables de Supabase, la aplicación usa los personajes de `api/_casos.js` como respaldo (sin poder editarlos).
+
+En `/docente.html` se editan las capas, se activa o desactiva cada personaje y se elige su voz de ElevenLabs desde una lista con las voces de la cuenta, con botones para escucharla.
