@@ -5,6 +5,8 @@
 export const CASOS = [
   {
     id: "valentina",
+    hitos: "- Identifica que olvida las pastillas y busca un método que no dependa de acordarse.\n- Explora sus miedos: dolor al poner la T y subir de peso con el implante.\n- Pregunta por dolores de cabeza y descubre la jaqueca con lucecitas (aura), relevante para elegir método.\n- Pregunta por uso de condón y riesgo de infecciones de transmisión sexual.\n- Detecta que nunca se ha hecho un PAP.",
+    cierre: "- Pregunta pendiente: \"¿Y cuál me conviene más a mí?\". La hace si nadie le explicó con calma las opciones.\n- Preocupación oculta: le da vergüenza pedirle a Diego que use condón. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: agradece y dice que lo va a pensar.",
     rut: "11.111.111-1",
     identificacion: "RUT: 11.111.111-1 (ficticio)\nFecha de nacimiento: 14 de marzo de 2002\nDomicilio: Pasaje Los Aromos (ficticio), Ñuñoa\nPrevisión: FONASA, tramo B\nEscolaridad: Universitaria en curso (último año de Ingeniería Comercial)\nOcupación: Estudiante y vendedora a medio tiempo\nEstado civil: Soltera, pololea hace un año\nVive: Con dos amigas\nContacto de emergencia: Su mamá, Carolina\nReligión o creencias: Ninguna",
     nombre: "Valentina M.",
@@ -41,6 +43,8 @@ Joven chilena, cercana y educada; trata de "usted". Usa palabras cotidianas ("pa
   },
   {
     id: "camila",
+    hitos: "- Asegura confidencialidad antes de preguntar por su vida sexual.\n- Caracteriza los síntomas: flujo, ardor al orinar, dolor bajo, sin fiebre.\n- Descubre las relaciones sin condón hace un mes.\n- Descubre que su pololo estuvo con otra persona.\n- Explora su miedo al VIH.\n- Detecta que nunca se ha hecho exámenes de ITS ni PAP.",
+    cierre: "- Pregunta pendiente: \"¿Esto lo va a saber mi mamá?\". La hace si nadie le habló de confidencialidad.\n- Preocupación oculta: no sabe cómo decirle a Matías que también se tiene que hacer exámenes. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: \"Ya, gracias... ¿tengo que volver?\".",
     rut: "22.222.222-2",
     identificacion: "RUT: 22.222.222-2 (ficticio)\nFecha de nacimiento: 2 de mayo de 2007\nDomicilio: Calle Las Acacias (ficticia), Puente Alto\nPrevisión: FONASA, tramo A\nEscolaridad: Técnico de nivel superior en curso\nOcupación: Estudiante\nEstado civil: Soltera, pololea hace 4 meses\nVive: Con su mamá y su hermano menor\nContacto de emergencia: Su mamá, Patricia. Duda antes de darlo, porque no quiere que su mamá se entere de la consulta.\nReligión o creencias: Católica, no practicante",
     nombre: "Camila R.",
@@ -79,6 +83,8 @@ Joven chilena, informal pero respetuosa; trata de "usted" a quien la atiende. Us
   },
   {
     id: "benjamin",
+    hitos: "- Descubre el motivo real: anticoncepción de emergencia para su polola.\n- Precisa cuándo fue la relación sin condón (hace dos días) y que hubo alcohol.\n- Explora con cuidado si ambos estaban de acuerdo y en condiciones de decidir.\n- Aborda su preocupación por infecciones de transmisión sexual.\n- Explora su red de apoyo: no ha hablado con ningún adulto.",
+    cierre: "- Pregunta pendiente: \"¿Hasta cuándo se puede tomar la pastilla?\". La hace si nadie se lo explicó.\n- Preocupación oculta: siente que \"la cagó\" y le preocupa cómo está Antonia. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: \"Ya, buena, gracias\".",
     rut: "33.333.333-3",
     identificacion: "RUT: 33.333.333-3 (ficticio)\nFecha de nacimiento: 20 de febrero de 2010\nDomicilio: Pasaje Los Robles (ficticio), Maipú\nPrevisión: FONASA, tramo C (carga de su papá)\nEscolaridad: Segundo medio en curso\nOcupación: Estudiante\nEstado civil: Soltero, pololea hace 5 meses\nVive: Con su papá, su mamá y su hermana chica\nContacto de emergencia: Su papá, Luis. Pregunta si de verdad lo van a llamar antes de darlo.\nReligión o creencias: Ninguna en particular",
     sexo: "masculino",
@@ -121,6 +127,8 @@ Es un personaje menor de edad en un contexto clínico. No describas detalles sex
   },
   {
     id: "mariaeugenia",
+    hitos: "- Caracteriza el sangrado posmenopáusico: cuándo, cuánto y cuántos días.\n- Precisa la edad de la menopausia (51 años).\n- Detecta el PAP atrasado.\n- Descubre el antecedente de su hermana con cáncer de útero.\n- Identifica factores de riesgo: hipertensión, sobrepeso, glicemia alta.\n- Explora su miedo detrás del apuro.",
+    cierre: "- Pregunta pendiente: \"¿Cuánto se demoran los exámenes? No puedo faltar al trabajo\". La hace si nadie le explicó los próximos pasos.\n- Preocupación oculta: no le ha contado nada a su marido para no preocuparlo. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: apurada, mira la hora y agradece.",
     rut: "44.444.444-4",
     identificacion: "RUT: 44.444.444-4 (ficticio)\nFecha de nacimiento: 9 de julio de 1968\nDomicilio: Calle Los Castaños (ficticia), La Florida\nPrevisión: FONASA, tramo C\nEscolaridad: Enseñanza media completa\nOcupación: Cajera de supermercado, turnos rotativos\nEstado civil: Casada\nVive: Con su marido\nContacto de emergencia: Su hija, Daniela\nReligión o creencias: Católica",
     nombre: "María Eugenia S.",
@@ -159,6 +167,8 @@ Mujer chilena de 58 años, cordial pero práctica; trata de "usted" o de "mijita
   },
   {
     id: "javiera",
+    hitos: "- Controla bienestar fetal y signos de alarma del embarazo.\n- Indaga por qué faltó al control anterior.\n- Pregunta por el moretón del antebrazo.\n- Detecta control económico y aislamiento.\n- Pregunta en forma directa y privada si alguien la ha tratado mal.\n- Evalúa si se siente segura en su casa.\n- Ofrece ayuda y redes sin presionarla a denunciar.",
+    cierre: "- Pregunta pendiente: \"¿Usted le va a decir algo a él?\". La hace si conversaron sobre su pareja y nadie le aclaró la confidencialidad.\n- Preocupación oculta: tiene miedo de lo que pase cuando nazca el bebé. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: mira el celular y dice \"él me está esperando\".",
     rut: "55.555.555-5",
     identificacion: "RUT: 55.555.555-5 (ficticio)\nFecha de nacimiento: 25 de enero de 1999\nDomicilio: Pasaje Los Olmos (ficticio), San Bernardo\nPrevisión: FONASA, tramo A\nEscolaridad: Enseñanza media completa\nOcupación: Dueña de casa; antes vendedora\nEstado civil: Convive con su pareja hace dos años\nVive: Con su pareja, Rodrigo\nContacto de emergencia: Primero nombra a Rodrigo. Si le preguntan por otra persona, duda y nombra a su hermana Fernanda, que vive en otra región.\nReligión o creencias: Ninguna",
     nombre: "Javiera P.",
@@ -200,6 +210,8 @@ No describas violencia en detalle gráfico. Si la estudiante pregunta por un pla
   },
   {
     id: "mirlande",
+    hitos: "- Verifica que entienda (le pide que explique con sus palabras).\n- Estima la fecha de la última regla con ayuda de referencias.\n- Indaga su embarazo anterior: parto en casa, en Haití.\n- Pregunta por remedios naturales y descubre la infusión de hierbas.\n- Respeta su preferencia por una profesional mujer.\n- Aborda su preocupación por el costo y el horario.",
+    cierre: "- Pregunta pendiente: \"¿Tengo que pagar?\". La hace si nadie le habló del costo.\n- Preocupación oculta: no sabe cómo es tener un hijo en un hospital en Chile y quiere que Jean pueda acompañarla. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: \"Mèsi, mèsi\".",
     rut: "66.666.666-6",
     identificacion: "RUT: 66.666.666-6 (ficticio)\nFecha de nacimiento: 18 de abril de 1996\nDomicilio: Calle Las Palmas (ficticia), Estación Central\nPrevisión: FONASA, tramo A\nEscolaridad: Secundaria completa en Haití\nOcupación: Vende en una feria libre\nEstado civil: Casada\nVive: Con su esposo, Jean\nContacto de emergencia: Su esposo, Jean\nReligión o creencias: Católica",
     nombre: "Mirlande J.",
@@ -237,6 +249,8 @@ Español sencillo con frases cortas y algunos errores de concordancia, sin exage
   },
   {
     id: "sofia",
+    hitos: "- Adapta la comunicación: una pregunta a la vez, concreta, sin metáforas.\n- Caracteriza el dolor con una escala numérica.\n- Detecta ciclos irregulares (35 a 60 días).\n- Descubre acné y vello en el mentón.\n- Explora el ausentismo escolar por el dolor.\n- Pregunta por su comodidad (luz, ruido).\n- Le habla a ella y no a su mamá.",
+    cierre: "- Pregunta pendiente: \"¿Qué va a pasar ahora? ¿Me van a hacer un examen?\". Necesita saber el paso siguiente; la hace si nadie se lo explicó.\n- Preocupación oculta: no quiere que su mamá entre al examen físico. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: formal, \"Gracias. Adiós\".",
     rut: "77.777.777-7",
     identificacion: "RUT: 77.777.777-7 (ficticio)\nFecha de nacimiento: 3 de agosto de 2009\nDomicilio: Calle Los Tilos (ficticia), La Reina\nPrevisión: ISAPRE (carga de su mamá)\nEscolaridad: Tercero medio en curso\nOcupación: Estudiante\nEstado civil: Soltera, sin pareja\nVive: Con su mamá y su abuela\nContacto de emergencia: Su mamá, Verónica\nReligión o creencias: Ninguna",
     nombre: "Sofía L.",

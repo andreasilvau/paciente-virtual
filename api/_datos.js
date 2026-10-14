@@ -10,7 +10,7 @@ export const supabaseConfigurado = Boolean(URL_SB && CLAVE_SB);
 // Columnas de la tabla que se pueden editar desde la página de docente.
 export const CAMPOS = ["orden", "activo", "nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "desafio",
   "foco_cicaa", "carreras", "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional",
-  "forma_de_hablar", "reglas_adicionales", "voz_id"];
+  "forma_de_hablar", "reglas_adicionales", "hitos", "cierre", "voz_id"];
 
 function encabezados(extra = {}) {
   const h = { apikey: CLAVE_SB, "Content-Type": "application/json", ...extra };
@@ -47,7 +47,7 @@ function desdeArchivo(c, i) {
   return {
     id: c.id, orden: (i + 1) * 10, activo: true, nombre: c.nombre, sexo: c.sexo || "femenino", edad: c.edad, rut: c.rut || "",
     atencion: c.atencion, motivo: c.motivo, nivel_dificultad: c.nivel, desafio: c.desafio, foco_cicaa: c.foco, carreras: [],
-    identificacion: c.identificacion || "", guion_completo: c.guion, voz_id: null,
+    identificacion: c.identificacion || "", guion_completo: c.guion, hitos: c.hitos || "", cierre: c.cierre || "", voz_id: null,
   };
 }
 
@@ -96,11 +96,12 @@ export function datosPublicos(c) {
 
 // Arma el guion completo a partir de las capas, en el orden en que la paciente lo necesita.
 export function guionCompleto(c) {
-  if (c.guion_completo) return c.guion_completo;
+  const cierre = c.cierre && c.cierre.trim() ? `\n\nCIERRE DE LA ENTREVISTA\n${c.cierre.trim()}` : "";
+  if (c.guion_completo) return c.guion_completo + cierre;
   const capas = [
     ["IDENTIDAD", c.identidad], ["CÓMO PARTE LA CONSULTA", c.guion_clinico],
     ["LO QUE CUENTA SOLO SI SE LO PREGUNTAN", c.info_condicionada], ["CARGA EMOCIONAL", c.carga_emocional],
     ["FORMA DE HABLAR", c.forma_de_hablar], ["REGLA ADICIONAL", c.reglas_adicionales],
   ];
-  return capas.filter(([, t]) => t && t.trim()).map(([n, t]) => `${n}\n${t.trim()}`).join("\n\n");
+  return capas.filter(([, t]) => t && t.trim()).map(([n, t]) => `${n}\n${t.trim()}`).join("\n\n") + cierre;
 }

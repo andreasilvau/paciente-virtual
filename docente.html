@@ -121,6 +121,12 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       </fieldset>
 
       <fieldset>
+        <legend>Cierre e hitos</legend>
+        <div class="campo ancho"><label for="f_cierre">Cierre de la entrevista</label><textarea id="f_cierre" rows="5"></textarea><span class="ayuda">Pregunta pendiente (la hace si nadie se la respondió), preocupación oculta (solo si le preguntan «¿algo más?») y despedida.</span></div>
+        <div class="campo ancho"><label for="f_hitos">Hitos del caso</label><textarea id="f_hitos" rows="7"></textarea><span class="ayuda">Lo que el estudiante debería descubrir o hacer, uno por línea. El personaje no los ve; la retroalimentación marca cada uno como logrado, en parte o pendiente.</span></div>
+      </fieldset>
+
+      <fieldset>
         <legend>Voz</legend>
         <div class="campo ancho"><label for="f_voz_lista">Voz de ElevenLabs</label>
           <select id="f_voz_lista"><option value="">Cargando voces…</option></select>
@@ -146,7 +152,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 <script>
 const $ = id => document.getElementById(id);
 const CAMPOS = ["nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "foco_cicaa", "orden", "activo", "desafio", "carreras",
-  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "voz_id"];
+  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "cierre", "hitos", "voz_id"];
 let codigo = "", casos = [], voces = [], actual = null, nuevo = false, cambios = false, editable = true;
 const audio = new Audio();
 const guardar = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };

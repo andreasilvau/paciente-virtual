@@ -116,6 +116,14 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .nivel-avanzado { color: var(--rec); }
 .foco { font-size: .82rem; color: var(--muted); }
 
+/* Aviso al despedirse y hitos de la retroalimentación */
+.sugerencia { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--soft); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; }
+.hito { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; white-space: normal; }
+.hito .marca { flex: none; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 2px 9px; border: 1px solid currentColor; }
+.marca-logrado { color: var(--accent); }
+.marca-enparte { color: var(--warn); }
+.marca-pendiente { color: var(--rec); }
+
 /* Cierre de la entrevista */
 .cierre { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 14px 0; }
 .cierre img { width: 96px; height: auto; }
@@ -212,10 +220,15 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
       </section>
 
       <section class="log" id="log" aria-live="polite" aria-label="Entrevista">
-        <div class="vacio" id="vacio">Toca «Hablar», saluda y preséntate. Vuelve a tocar cuando termines de hablar.</div>
+        <div class="vacio" id="vacio">Toca «Hablar», saluda y preséntate. Vuelve a tocar cuando termines de hablar. Recuerda los tres momentos: inicio, exploración y cierre.</div>
       </section>
 
       <div id="aviso" class="aviso" role="status" hidden></div>
+
+      <div id="sugerenciaCierre" class="sugerencia" role="status" hidden>
+        <span>Parece que cerraste la entrevista. ¿Quieres ver cómo te fue?</span>
+        <button type="button" class="primario" id="btnSugerenciaFeedback">Pedir retroalimentación</button>
+      </div>
 
       <section id="secFeedback" class="ficha" hidden>
         <div class="ficha-head"><span class="label">Retroalimentación orientativa · Tareas CICAA</span></div>
@@ -254,6 +267,8 @@ let grabador = null, trozos = [], corteGrabacion = null;
 const reproductor = new Audio();
 let audioDesbloqueado = false;
 let casos = [], casoActual = null, errorCasos = "";
+// Frases con que el estudiante suele despedirse; al detectarlas se sugiere pedir la retroalimentación.
+const DESPEDIDA = /\b(chao|chau|adi[oó]s|hasta luego|hasta pronto|nos vemos|que est[eé] (muy )?bien|cu[ií]dese|eso ser[ií]a todo|eso es todo|terminamos|que le vaya bien)\b/i;
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -357,6 +372,7 @@ async function enviar(texto) {
     b.classList.remove("espera"); b.textContent = resp;
     turnos.push({ role: "assistant", content: resp });
     hablar(resp);
+    if (DESPEDIDA.test(texto) && turnos.filter(t => t.role === "user").length >= 3) { $("sugerenciaCierre").hidden = false; mostrarAlFinal($("sugerenciaCierre")); }
   } catch (e) {
     turnos.pop(); contar(); b.parentElement.remove(); mia.parentElement.remove();
     $("vacio").hidden = turnos.length > 0;
@@ -483,8 +499,16 @@ $("form").addEventListener("submit", e => { e.preventDefault(); desbloquearAudio
 // Muestra los títulos de cada tarea CICAA destacados.
 function pintarFeedback(texto) {
   const caja = $("feedback"); caja.textContent = "";
-  const titulo = /^(Conectar|Identificar y comprender|Acordar|Ayudar|Para la próxima vez)\s*:?\s*(.*)$/i;
+  const titulo = /^(Conectar|Identificar y comprender|Acordar|Ayudar|Hitos del caso|Para la próxima vez)\s*:?\s*(.*)$/i;
+  const hito = /^[-•]?\s*(Logrado|En parte|Pendiente)\s*:\s*(.*)$/i;
   for (const linea of texto.split("\n")) {
+    const h = linea.trim().match(hito);
+    if (h) {
+      const fila = document.createElement("div"); fila.className = "hito";
+      const marca = document.createElement("span"); marca.className = "marca marca-" + h[1].toLowerCase().replace(/\s/g, ""); marca.textContent = h[1];
+      const t = document.createElement("span"); t.textContent = h[2];
+      fila.append(marca, t); caja.append(fila); continue;
+    }
     const m = linea.trim().match(titulo);
     if (m) {
       const t = document.createElement("strong"); t.textContent = m[1]; caja.append(t);
@@ -493,7 +517,9 @@ function pintarFeedback(texto) {
   }
 }
 function transcripcion() { return turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n"); }
+$("btnSugerenciaFeedback").onclick = () => $("btnFeedback").onclick();
 $("btnFeedback").onclick = async () => {
+  $("sugerenciaCierre").hidden = true;
   if (ocupado) return;
   if (turnos.filter(t => t.role === "user").length < 3) { mostrarAviso("Haz al menos tres intervenciones antes de pedir retroalimentación."); return; }
   mostrarAviso(""); reproductor.pause();
@@ -527,7 +553,7 @@ $("btnCopiar").onclick = async () => {
 $("btnNueva").onclick = () => {
   reproductor.pause(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
   log.querySelectorAll(".turno").forEach(e => e.remove()); $("vacio").hidden = false;
-  $("secFeedback").hidden = true; mostrarAviso(""); contar();
+  $("secFeedback").hidden = true; $("sugerenciaCierre").hidden = true; mostrarAviso(""); contar();
 };
 $("btnSalirSeleccion").onclick = () => salir();
 $("btnPacientes").onclick = () => {
