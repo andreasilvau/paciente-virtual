@@ -215,7 +215,11 @@ async function hablar(texto) {
     reproductor.src = url;
     reproductor.onended = () => URL.revokeObjectURL(url);
     await reproductor.play();
-  } catch (e) { mostrarAviso("No se pudo reproducir la voz. La respuesta queda escrita."); }
+  } catch (e) {
+    const detalle = e && e.message && e.message.startsWith("Azure") ? " " + e.message
+      : e && e.name === "NotAllowedError" ? " El navegador bloqueó el audio: toca «Hablar» o «Enviar» y vuelve a intentarlo." : "";
+    mostrarAviso("No se pudo reproducir la voz; la respuesta queda escrita." + detalle);
+  }
 }
 function pintarVoz() {
   $("btnVoz").setAttribute("aria-pressed", String(vozActiva));
