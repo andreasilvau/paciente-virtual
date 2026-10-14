@@ -99,6 +99,9 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .seleccion { display: flex; flex-direction: column; gap: 16px; }
 .seleccion .saludo { display: flex; align-items: center; gap: 14px; }
 .seleccion .saludo img { width: 64px; height: auto; }
+.seleccion .saludo .salir-sel { margin-left: auto; align-self: flex-start; }
+.seleccion .saludo .globo { flex: 1; min-width: 0; }
+@media (max-width: 560px) { .seleccion .saludo { gap: 10px; } .seleccion .saludo img { width: 48px; } .seleccion .saludo .salir-sel { padding: 8px 10px; } }
 .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
 .tarjeta { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .tarjeta .cabeza { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -177,6 +180,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
     <div class="saludo">
       <img src="/mascota.webp" width="440" height="536" alt="">
       <p class="globo">¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.</p>
+      <button type="button" id="btnSalirSeleccion" class="salir-sel" title="Salir y borrar el código guardado">Salir</button>
     </div>
     <div class="tarjetas" id="tarjetas"></div>
   </section>
@@ -525,6 +529,7 @@ $("btnNueva").onclick = () => {
   log.querySelectorAll(".turno").forEach(e => e.remove()); $("vacio").hidden = false;
   $("secFeedback").hidden = true; mostrarAviso(""); contar();
 };
+$("btnSalirSeleccion").onclick = () => salir();
 $("btnPacientes").onclick = () => {
   if (turnos.length && !confirm("¿Cambiar de paciente? Se borrará la entrevista actual. Si la necesitas, primero usa «Copiar transcripción».")) return;
   if (grabador) terminarGrabacion();
