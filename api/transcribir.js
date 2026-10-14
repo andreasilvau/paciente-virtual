@@ -1,4 +1,4 @@
-// Convierte la voz del estudiante en texto, con Whisper (OpenAI).
+// Convierte la voz del estudiante en texto con OpenAI (gpt-4o-mini-transcribe; para volver a Whisper, OPENAI_TRANSCRIBE_MODEL=whisper-1).
 import { error, verificarAcceso } from "./_lib.js";
 
 const PISTA = "Consulta de salud sexual y reproductiva en Chile. Matrona, pololo, flujo, regla, condón, anticonceptivo, ITS, VIH, PAP, examen.";
@@ -15,7 +15,7 @@ export async function POST(request) {
 
   const form = new FormData();
   form.append("file", audio, audio.name || "voz.webm");
-  form.append("model", process.env.OPENAI_TRANSCRIBE_MODEL || "whisper-1");
+  form.append("model", process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe");
   form.append("language", "es");
   form.append("prompt", PISTA);
 
