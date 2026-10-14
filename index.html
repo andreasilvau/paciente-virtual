@@ -128,6 +128,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         <button id="btnFeedback" type="button">Terminar y pedir retroalimentación</button>
         <button id="btnCopiar" type="button">Copiar transcripción</button>
         <button id="btnNueva" type="button">Nueva entrevista</button>
+        <button id="btnSalir" type="button">Salir</button>
       </div>
 
       <section id="secFeedback" class="ficha" hidden>
@@ -168,7 +169,10 @@ async function api(ruta, opciones = {}) {
 }
 
 /* Acceso */
-function salir() { codigo = ""; guardar("codigo", ""); $("app").hidden = true; $("inicio").hidden = false; }
+function salir() {
+  codigo = ""; guardar("codigo", ""); $("codigo").value = "";
+  $("app").hidden = true; $("inicio").hidden = false;
+}
 $("formAcceso").addEventListener("submit", e => {
   e.preventDefault();
   codigo = $("codigo").value.trim(); if (!codigo) return;
@@ -330,6 +334,13 @@ $("btnNueva").onclick = () => {
   reproductor.pause(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
   log.querySelectorAll(".turno").forEach(e => e.remove()); $("vacio").hidden = false;
   $("secFeedback").hidden = true; mostrarAviso(""); contar();
+};
+$("btnSalir").onclick = () => {
+  if (turnos.length && !confirm("¿Salir? Se borrará la entrevista actual. Si la necesitas, primero usa «Copiar transcripción».")) return;
+  if (grabador) terminarGrabacion();
+  $("btnNueva").onclick();
+  salir();
+  window.scrollTo(0, 0);
 };
 
 /* Inicio */
