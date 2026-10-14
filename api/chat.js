@@ -34,7 +34,9 @@ async function preguntarAClaude(modelo, system, messages, maxTokens) {
     console.error("Claude", r.status, JSON.stringify(data).slice(0, 500));
     throw new Error(r.status === 429 ? "limite" : "fallo");
   }
-  return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+  const texto = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+  if (data.stop_reason === "max_tokens") console.error("Respuesta cortada por largo", modelo);
+  return texto;
 }
 
 export async function POST(request) {
@@ -51,7 +53,7 @@ export async function POST(request) {
       if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
       const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
       const texto = await preguntarAClaude(MODELO_FEEDBACK, REGLAS_FEEDBACK,
-        [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 1200);
+        [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 4000);
       return Response.json({ texto });
     }
     if (!turnos.length || turnos[turnos.length - 1].role !== "user") return error(400, "No llegó tu intervención.");

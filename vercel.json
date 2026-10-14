@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/chat.js": { "maxDuration": 60 },
+    "api/hablar.js": { "maxDuration": 60 },
+    "api/transcribir.js": { "maxDuration": 60 }
+  }
+}
