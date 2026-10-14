@@ -1,0 +1,8 @@
+{
+  "name": "paciente-virtual-conversacional",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Paciente virtual para entrenar anamnesis: Claude responde, Whisper escucha y Azure habla con voz chilena.",
+  "engines": { "node": ">=20" }
+}
