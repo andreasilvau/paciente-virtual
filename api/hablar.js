@@ -4,8 +4,14 @@ import { error, escaparXml, verificarAcceso } from "./_lib.js";
 
 const AUDIO = { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" };
 
-async function conElevenLabs(texto) {
-  const voz = (process.env.ELEVENLABS_VOICE_ID || "").trim();
+// Cada personaje puede tener su propia voz: ELEVENLABS_VOICE_<ID> (por ejemplo ELEVENLABS_VOICE_JAVIERA).
+function vozDe(caso, propia, general) {
+  const id = String(caso || "").toUpperCase().replace(/[^A-Z]/g, "");
+  return ((id && process.env[`${propia}_${id}`]) || process.env[general] || "").trim();
+}
+
+async function conElevenLabs(texto, caso) {
+  const voz = vozDe(caso, "ELEVENLABS_VOICE", "ELEVENLABS_VOICE_ID");
   if (!voz) return error(500, "ElevenLabs: falta configurar ELEVENLABS_VOICE_ID en Vercel.");
   const modelo = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
   let r;
@@ -54,11 +60,11 @@ async function conElevenLabsSinIdioma(texto, voz, modelo) {
   return new Response(r.body, { headers: AUDIO });
 }
 
-async function conAzure(texto) {
+async function conAzure(texto, caso) {
   const clave = process.env.AZURE_SPEECH_KEY;
   const region = process.env.AZURE_SPEECH_REGION;
   if (!clave || !region) return error(500, "Falta configurar la voz: ELEVENLABS_API_KEY, o AZURE_SPEECH_KEY y AZURE_SPEECH_REGION.");
-  const voz = process.env.AZURE_VOICE || "es-CL-CatalinaNeural";
+  const voz = vozDe(caso, "AZURE_VOICE", "AZURE_VOICE") || "es-CL-CatalinaNeural";
   const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="es-CL"><voice name="${escaparXml(voz)}">${escaparXml(texto)}</voice></speak>`;
   const regionLimpia = region.trim().toLowerCase().replace(/\s+/g, "");
   let r;
@@ -94,18 +100,19 @@ export async function POST(request) {
   const denegado = verificarAcceso(request);
   if (denegado) return denegado;
 
-  let texto;
-  try { texto = String((await request.json()).texto || "").trim().slice(0, 1500); } catch { return error(400, "Solicitud inválida."); }
+  let texto, caso;
+  try { const b = await request.json(); texto = String(b.texto || "").trim().slice(0, 1500); caso = b.caso; } catch { return error(400, "Solicitud inválida."); }
   if (!texto) return error(400, "No hay texto que leer.");
 
-  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto) : conAzure(texto);
+  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto, caso) : conAzure(texto, caso);
 }
 
 // Versión para que el navegador reproduzca el audio mientras va llegando.
 export async function GET(request) {
   const denegado = verificarAcceso(request);
   if (denegado) return denegado;
-  const texto = String(new URL(request.url).searchParams.get("texto") || "").trim().slice(0, 1500);
+  const q = new URL(request.url).searchParams;
+  const texto = String(q.get("texto") || "").trim().slice(0, 1500), caso = q.get("caso");
   if (!texto) return error(400, "No hay texto que leer.");
-  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto) : conAzure(texto);
+  return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto, caso) : conAzure(texto, caso);
 }

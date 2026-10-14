@@ -1,6 +1,6 @@
 // Respuestas de la paciente y retroalimentación final, con la API de Claude.
 import { error, verificarAcceso } from "./_lib.js";
-import { REGLAS_PACIENTE, REGLAS_FEEDBACK } from "./_caso.js";
+import { buscarCaso, reglasPaciente, reglasFeedback } from "./_casos.js";
 
 const MODELO_PACIENTE = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const MODELO_FEEDBACK = process.env.CLAUDE_MODEL_FEEDBACK || "claude-sonnet-5-5";
@@ -47,17 +47,18 @@ export async function POST(request) {
   let body;
   try { body = await request.json(); } catch { return error(400, "Solicitud inválida."); }
   const turnos = limpiarTurnos(body.turnos);
+  const caso = buscarCaso(String(body.caso || ""));
 
   try {
     if (body.modo === "feedback") {
       if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
       const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
-      const texto = await preguntarAClaude(MODELO_FEEDBACK, REGLAS_FEEDBACK,
+      const texto = await preguntarAClaude(MODELO_FEEDBACK, reglasFeedback(caso),
         [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 4000);
       return Response.json({ texto });
     }
     if (!turnos.length || turnos[turnos.length - 1].role !== "user") return error(400, "No llegó tu intervención.");
-    const texto = await preguntarAClaude(MODELO_PACIENTE, REGLAS_PACIENTE, turnos, 300);
+    const texto = await preguntarAClaude(MODELO_PACIENTE, reglasPaciente(caso), turnos, 300);
     if (!texto) return error(502, "La paciente no alcanzó a responder. Vuelve a intentarlo.");
     return Response.json({ texto });
   } catch (e) {

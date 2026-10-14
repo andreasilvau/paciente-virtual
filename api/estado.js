@@ -1,9 +1,9 @@
 // Indica qué servicios están configurados (nunca muestra las claves) y los datos visibles de la ficha.
-import { PACIENTE } from "./_caso.js";
+import { CASOS, datosPublicos } from "./_casos.js";
 
 export function GET() {
   return Response.json({
-    paciente: PACIENTE,
+    casos: CASOS.map(datosPublicos),
     servicios: {
       codigo: Boolean(process.env.ACCESS_CODE),
       claude: Boolean(process.env.ANTHROPIC_API_KEY),
