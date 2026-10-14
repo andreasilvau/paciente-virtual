@@ -295,7 +295,7 @@ async function api(ruta, opciones = {}) {
 
 /* Acceso */
 function salir() {
-  codigo = ""; guardar("codigo", ""); $("codigo").value = "";
+  codigo = ""; $("codigo").value = "";
   mostrar("inicio");
 }
 // Muestra una sola pantalla: inicio, selección de paciente o entrevista.
@@ -352,7 +352,7 @@ $("formDocente").addEventListener("submit", e => {
 $("formAcceso").addEventListener("submit", e => {
   e.preventDefault();
   codigo = $("codigo").value.trim(); if (!codigo) return;
-  guardar("codigo", codigo); mostrar("seleccion");
+  mostrar("seleccion");
 });
 
 /* Conversación */
@@ -603,8 +603,10 @@ $("btnSalir").onclick = () => {
 /* Inicio */
 (async () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
-  codigo = leer("codigo") || "";
-  mostrar(codigo ? "seleccion" : "inicio");
+  // El código no se guarda: cada vez que se abre la aplicación parte en el inicio.
+  try { localStorage.removeItem("codigo"); } catch (e) {}
+  codigo = "";
+  mostrar("inicio");
   try {
     const d = await (await fetch("/api/estado")).json();
     servicios = d.servicios || {};

@@ -166,7 +166,7 @@ async function api(ruta, opciones = {}) {
   return r;
 }
 
-function salir() { codigo = ""; guardar("docente", ""); $("panel").hidden = true; $("formAcceso").hidden = false; }
+function salir() { codigo = ""; $("codigoDocente").value = ""; $("panel").hidden = true; $("formAcceso").hidden = false; }
 $("btnSalir").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return; salir(); };
 $("formAcceso").addEventListener("submit", e => { e.preventDefault(); codigo = $("codigoDocente").value.trim(); if (codigo) cargar(); });
 
@@ -175,7 +175,6 @@ async function cargar() {
   try {
     const d = await (await api("/api/docente")).json();
     casos = d.casos || []; editable = d.editable;
-    guardar("docente", codigo);
     $("formAcceso").hidden = true; $("panel").hidden = false;
     if (!editable) aviso("Estás viendo los personajes del archivo de respaldo. Para editarlos, configura SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel.");
     pintarLista();
@@ -284,7 +283,9 @@ $("editor").addEventListener("submit", async e => {
   finally { $("btnGuardar").disabled = !editable; }
 });
 
+// El código solo llega una vez desde la pestaña Docente del inicio; no queda guardado.
 codigo = leer("docente") || "";
+try { sessionStorage.removeItem("docente"); } catch (e) {}
 if (codigo) cargar();
 </script>
 </body>
