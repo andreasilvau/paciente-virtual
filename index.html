@@ -81,6 +81,9 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .globo::before { content: ""; position: absolute; left: -9px; top: 22px; border: 9px solid transparent; border-left: 0; border-right-color: var(--soft); }
 .acceso { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .acceso input { width: 100%; }
+.pestanas { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.pestanas button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--muted); padding: 8px 14px; }
+.pestanas button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
 @media (max-width: 560px) {
   .inicio { grid-template-columns: 1fr; gap: 12px; }
   .inicio .mascota { max-width: 150px; }
@@ -175,12 +178,21 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
     <img class="mascota" src="/mascota.webp" width="440" height="536" alt="Robot con delantal clínico saludando con la mano">
     <div class="bienvenida">
       <p class="globo">¡Hola! Antes de entrar al box, ingresa el código que te entregó tu docente.</p>
-      <form class="acceso" id="formAcceso">
+      <div class="pestanas" role="tablist" aria-label="Tipo de acceso">
+        <button type="button" role="tab" id="tabEstudiante" aria-selected="true" aria-controls="formAcceso">Estudiante</button>
+        <button type="button" role="tab" id="tabDocente" aria-selected="false" aria-controls="formDocente">Docente</button>
+      </div>
+      <form class="acceso" id="formAcceso" role="tabpanel" aria-labelledby="tabEstudiante">
         <label class="label" for="codigo">Código de acceso</label>
         <input type="password" id="codigo" autocomplete="off" placeholder="Te lo entrega tu docente">
         <button class="primario" type="submit">Entrar</button>
       </form>
-      <p class="nota">¿Eres docente? <a href="/docente.html">Edita los personajes</a>.</p>
+      <form class="acceso" id="formDocente" role="tabpanel" aria-labelledby="tabDocente" hidden>
+        <label class="label" for="codigoDocenteInicio">Código de docente</label>
+        <input type="password" id="codigoDocenteInicio" autocomplete="off">
+        <button class="primario" type="submit">Entrar al panel docente</button>
+        <p class="nota">Ahí editas los personajes, sus hitos y su voz.</p>
+      </form>
     </div>
   </section>
 
@@ -319,6 +331,24 @@ function elegirCaso(c) {
   $("btnNueva").onclick();
   mostrar("app");
 }
+// Pestañas Estudiante / Docente en el inicio
+function elegirPestana(docente) {
+  $("tabEstudiante").setAttribute("aria-selected", String(!docente));
+  $("tabDocente").setAttribute("aria-selected", String(docente));
+  $("formAcceso").hidden = docente; $("formDocente").hidden = !docente;
+  document.querySelector("#inicio .globo").textContent = docente
+    ? "¡Hola, profe! Ingresa tu código docente para editar los personajes."
+    : "¡Hola! Antes de entrar al box, ingresa el código que te entregó tu docente.";
+  (docente ? $("codigoDocenteInicio") : $("codigo")).focus();
+}
+$("tabEstudiante").onclick = () => elegirPestana(false);
+$("tabDocente").onclick = () => elegirPestana(true);
+$("formDocente").addEventListener("submit", e => {
+  e.preventDefault();
+  const c = $("codigoDocenteInicio").value.trim(); if (!c) return;
+  try { sessionStorage.setItem("docente", c); } catch (err) {}
+  location.href = "/docente.html";
+});
 $("formAcceso").addEventListener("submit", e => {
   e.preventDefault();
   codigo = $("codigo").value.trim(); if (!codigo) return;
