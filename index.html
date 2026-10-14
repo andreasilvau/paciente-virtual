@@ -20,7 +20,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
-.wrap { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: calc(20px + env(safe-area-inset-top, 0px)) 0; display: flex; flex-direction: column; gap: 16px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: calc(20px + env(safe-area-inset-top, 0px)) 0; display: flex; flex-direction: column; gap: 16px; }
 h1 { font: 700 1.6rem/1.15 var(--display); margin: 0; text-wrap: balance; }
 p { margin: 0; }
 .lead { color: var(--muted); max-width: 60ch; }
@@ -64,7 +64,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 #btnMic.grabando::before { content: ""; display: inline-block; width: .7em; height: .7em; border-radius: 50%; background: currentColor; margin-right: .5em; vertical-align: middle; }
 @media (prefers-reduced-motion: no-preference) { #btnMic.grabando::before { animation: late 1s ease-in-out infinite; } @keyframes late { 50% { opacity: .3; } } }
 
-.inicio { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 24px; align-items: center; }
+.inicio { max-width: 760px; display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 24px; align-items: center; }
 .inicio .mascota { width: 100%; max-width: 220px; height: auto; justify-self: center; }
 .bienvenida { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .globo { position: relative; background: var(--soft); color: var(--ink); border-radius: 14px; padding: 12px 16px; font-size: 1.02rem; max-width: 42ch; }
@@ -79,6 +79,30 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 @media (prefers-reduced-motion: no-preference) {
   .inicio .mascota { animation: saludo 2.4s ease-in-out 0.3s 1; transform-origin: 50% 90%; }
   @keyframes saludo { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-4deg); } 40% { transform: rotate(3deg); } 60% { transform: rotate(-2deg); } }
+}
+
+/* Diseño B: barra de íconos a la izquierda */
+.layout { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 20px; align-items: start; }
+.layout[hidden] { display: none !important; }
+.principal { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.riel { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 6px; }
+.riel button { display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--ink); padding: 10px 4px; font-size: .72rem; line-height: 1.2; border-radius: 8px; text-align: center; }
+.riel button:hover:not(:disabled) { background: var(--soft); }
+.riel button.destacado { background: var(--accent); color: var(--on-accent); }
+.riel button.destacado:hover:not(:disabled) { background: var(--accent); filter: brightness(1.1); }
+.riel #btnVoz[aria-pressed="true"] { background: var(--soft); color: var(--accent); }
+.riel .salir { color: var(--muted); }
+.riel .sep { flex: 1; min-height: 24px; }
+.ico svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; fill: none; display: block; }
+.ico svg .relleno { fill: currentColor; stroke: none; }
+#btnVoz .tachado { display: none; }
+#btnVoz[aria-pressed="false"] .tachado { display: inline; }
+#btnVoz[aria-pressed="false"] .ondas { display: none; }
+@media (max-width: 640px) {
+  .layout { grid-template-columns: 1fr; gap: 12px; }
+  .riel { position: static; flex-direction: row; overflow-x: auto; padding: 6px; }
+  .riel button { flex: 1 1 0; min-width: 0; padding: 8px 2px; font-size: .68rem; }
+  .riel .sep { display: none; }
 }
 </style>
 </head>
@@ -102,8 +126,17 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
     </div>
   </section>
 
-  <div id="app" hidden>
-    <div style="display:flex;flex-direction:column;gap:16px">
+  <div id="app" class="layout" hidden>
+    <nav class="riel" aria-label="Acciones de la entrevista">
+      <button id="btnFeedback" type="button" class="destacado" title="Terminar y pedir retroalimentación"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path class="relleno" d="M9 4h6v3H9z"/><path d="M8.5 13l2.5 2.5 4.5-5"/></svg></span><span class="txt">Retro­alimentación</span></button>
+      <button id="btnVoz" type="button" aria-pressed="true" title="Voz de la paciente"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="relleno" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="ondas" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="tachado" d="M16 9l6 6M22 9l-6 6"/></svg></span><span class="txt">Voz</span></button>
+      <button id="btnCopiar" type="button" class="" title="Copiar transcripción"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg></span><span class="txt">Copiar</span></button>
+      <button id="btnNueva" type="button" class="" title="Nueva entrevista"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></span><span class="txt">Nueva</span></button>
+      <div class="sep" aria-hidden="true"></div>
+      <button id="btnSalir" type="button" class="salir" title="Salir y borrar el código guardado"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg></span><span class="txt">Salir</span></button>
+    </nav>
+
+    <div class="principal">
       <section class="ficha" aria-label="Ficha de ingreso">
         <div class="ficha-head">
           <span class="label">Ficha de ingreso · Caso simulado</span>
@@ -123,28 +156,20 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 
       <div id="aviso" class="aviso" role="status" hidden></div>
 
-      <div class="fila">
-        <button id="btnVoz" type="button" aria-pressed="true">Voz de la paciente: activada</button>
-        <button id="btnFeedback" type="button">Terminar y pedir retroalimentación</button>
-        <button id="btnCopiar" type="button">Copiar transcripción</button>
-        <button id="btnNueva" type="button">Nueva entrevista</button>
-        <button id="btnSalir" type="button">Salir</button>
-      </div>
-
       <section id="secFeedback" class="ficha" hidden>
         <div class="ficha-head"><span class="label">Retroalimentación orientativa · Tareas CICAA</span></div>
         <div id="feedback"></div>
         <p class="nota" style="padding:0 14px 14px">Generada por IA a partir de la transcripción. Sirve para conversar en el debriefing; no reemplaza la rúbrica ni el juicio docente.</p>
       </section>
-    </div>
 
-    <form class="compositor" id="form">
-      <button id="btnMic" type="button">Hablar</button>
-      <div class="fila">
-        <textarea id="msg" rows="1" placeholder="O escribe tu intervención" aria-label="Tu intervención"></textarea>
-        <button id="btnEnviar" type="submit">Enviar</button>
-      </div>
-    </form>
+      <form class="compositor" id="form">
+        <button id="btnMic" type="button">Hablar</button>
+        <div class="fila">
+          <textarea id="msg" rows="1" placeholder="O escribe tu intervención" aria-label="Tu intervención"></textarea>
+          <button id="btnEnviar" type="submit">Enviar</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -252,7 +277,8 @@ async function hablar(texto) {
 }
 function pintarVoz() {
   $("btnVoz").setAttribute("aria-pressed", String(vozActiva));
-  $("btnVoz").textContent = "Voz de la paciente: " + (vozActiva ? "activada" : "desactivada");
+  $("btnVoz").querySelector(".txt").textContent = vozActiva ? "Voz" : "Sin voz";
+  $("btnVoz").title = "Voz de la paciente: " + (vozActiva ? "activada" : "desactivada");
 }
 $("btnVoz").onclick = () => { vozActiva = !vozActiva; if (!vozActiva) reproductor.pause(); guardar("voz", vozActiva ? "1" : "0"); pintarVoz(); };
 
@@ -326,9 +352,9 @@ $("btnFeedback").onclick = async () => {
 };
 $("btnCopiar").onclick = async () => {
   if (!turnos.length) { mostrarAviso("Todavía no hay entrevista que copiar."); return; }
-  try { await navigator.clipboard.writeText(transcripcion()); $("btnCopiar").textContent = "Transcripción copiada"; }
-  catch (e) { $("btnCopiar").textContent = "No se pudo copiar"; }
-  setTimeout(() => { $("btnCopiar").textContent = "Copiar transcripción"; }, 2000);
+  try { await navigator.clipboard.writeText(transcripcion()); $("btnCopiar").querySelector(".txt").textContent = "Copiado"; }
+  catch (e) { $("btnCopiar").querySelector(".txt").textContent = "No se pudo"; }
+  setTimeout(() => { $("btnCopiar").querySelector(".txt").textContent = "Copiar"; }, 2000);
 };
 $("btnNueva").onclick = () => {
   reproductor.pause(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
