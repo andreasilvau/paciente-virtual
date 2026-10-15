@@ -165,6 +165,48 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   .riel button { flex: 1 1 0; min-width: 0; padding: 8px 2px; font-size: .68rem; }
   .riel .sep { display: none; }
 }
+/* Color con sentido: cada paciente tiene su tono y cada tarea CICAA el suyo */
+:root {
+  --t0: #B83A6B; --t0s: #FBE7EF; --t1: #2F64B0; --t1s: #E4EDFA; --t2: #9A5B0C; --t2s: #FBEEDB; --t3: #6E4BB0; --t3s: #EEE8FA;
+  --t4: #2F7A45; --t4s: #E2F2E6; --t5: #B04A2E; --t5s: #FAE6E0; --t6: #0F6E86; --t6s: #DDF0F5;
+  --c-conectar: #B83A6B; --c-identificar: #2F64B0; --c-acordar: #6E4BB0; --c-ayudar: #2F7A45; --c-hitos: var(--accent);
+  --ok-bg: #DDF1EA; --parte-bg: #FBEEDB; --pend-bg: #FBE4E2;
+  --tono: var(--accent); --tono-suave: var(--soft);
+}
+@media (prefers-color-scheme: dark) { :root {
+  --t0: #F08BB2; --t0s: #3A1F2B; --t1: #8EB6F2; --t1s: #1B2A40; --t2: #E8B565; --t2s: #3A2C15; --t3: #BBA4F0; --t3s: #2A2240;
+  --t4: #8FD3A2; --t4s: #1A3324; --t5: #F0A08A; --t5s: #3A231C; --t6: #7FD0E3; --t6s: #15323A;
+  --c-conectar: #F08BB2; --c-identificar: #8EB6F2; --c-acordar: #BBA4F0; --c-ayudar: #8FD3A2;
+  --ok-bg: #173430; --parte-bg: #3A2C15; --pend-bg: #3D1E1C;
+} }
+.tono-0 { --tono: var(--t0); --tono-suave: var(--t0s); } .tono-1 { --tono: var(--t1); --tono-suave: var(--t1s); }
+.tono-2 { --tono: var(--t2); --tono-suave: var(--t2s); } .tono-3 { --tono: var(--t3); --tono-suave: var(--t3s); }
+.tono-4 { --tono: var(--t4); --tono-suave: var(--t4s); } .tono-5 { --tono: var(--t5); --tono-suave: var(--t5s); }
+.tono-6 { --tono: var(--t6); --tono-suave: var(--t6s); }
+.inicial { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--tono-suave); color: var(--tono); font: 700 1.2rem/1 var(--display); }
+.tarjeta { border-top: 5px solid var(--tono); }
+.tarjeta .cabeza { align-items: center; justify-content: flex-start; gap: 12px; }
+.tarjeta .cabeza .edad { margin-left: auto; }
+.tarjeta .foco { color: var(--tono); font-weight: 700; }
+.tarjeta:hover { border-color: color-mix(in srgb, var(--tono) 45%, var(--line)); border-top-color: var(--tono); }
+.ficha.paciente { border-left: 5px solid var(--tono); }
+.ficha.paciente .ficha-head { background: var(--tono-suave); border-radius: 0 6px 0 0; }
+.ficha.paciente #fNombre { color: var(--tono); }
+.turno.ella .label { color: var(--tono); font-weight: 700; }
+.turno.ella .burbuja { border-color: color-mix(in srgb, var(--tono) 30%, var(--line)); }
+#btnMic.hablando { background: var(--tono-suave); color: var(--tono); border-color: color-mix(in srgb, var(--tono) 35%, transparent); }
+.nivel { border: 0; }
+.nivel-basico { color: var(--accent); background: var(--ok-bg); }
+.nivel-intermedio { color: var(--warn); background: var(--parte-bg); }
+.nivel-avanzado { color: var(--rec); background: var(--pend-bg); }
+.hito .marca { border: 0; }
+.marca-logrado { background: var(--ok-bg); } .marca-enparte { background: var(--parte-bg); } .marca-pendiente { background: var(--pend-bg); }
+#feedback { padding: 6px 14px 14px; }
+#feedback .tarea { display: block; margin-top: 14px; padding: 2px 0 2px 12px; border-left: 4px solid var(--c, var(--accent)); color: var(--c, var(--accent)); font-family: var(--display); font-size: 1.05rem; }
+#feedback .t-conectar { --c: var(--c-conectar); } #feedback .t-identificar { --c: var(--c-identificar); }
+#feedback .t-acordar { --c: var(--c-acordar); } #feedback .t-ayudar { --c: var(--c-ayudar); } #feedback .t-hitos { --c: var(--c-hitos); }
+#feedback .t-proxima { --c: var(--accent); }
+#feedback .proxima { display: block; background: var(--soft); border-radius: 8px; padding: 10px 14px; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -218,7 +260,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
     </nav>
 
     <div class="principal">
-      <section class="ficha" aria-label="Ficha de ingreso">
+      <section class="ficha paciente" id="fichaPaciente" aria-label="Ficha de ingreso">
         <div class="ficha-head">
           <span class="label">Ficha de ingreso · Caso simulado</span>
           <span class="label">Entrevista <span id="reloj">00:00</span> · <span id="cuenta">0</span> intervenciones</span>
@@ -308,12 +350,14 @@ function claseNivel(n) { return "nivel nivel-" + String(n || "").toLowerCase().n
 function pintarTarjetas() {
   const cont = $("tarjetas"); cont.textContent = "";
   if (!casos.length) { const v = document.createElement("p"); v.className = "aviso"; v.textContent = errorCasos || "Todavía no hay pacientes disponibles. Avísale a tu docente."; cont.append(v); return; }
+  casos.forEach((c, i) => { c.tono = "tono-" + (i % 7); });
   for (const c of casos) {
-    const t = document.createElement("article"); t.className = "tarjeta";
+    const t = document.createElement("article"); t.className = "tarjeta " + c.tono;
     const cab = document.createElement("div"); cab.className = "cabeza";
+    const ini = document.createElement("span"); ini.className = "inicial"; ini.setAttribute("aria-hidden", "true"); ini.textContent = c.nombre.trim().charAt(0);
     const h = document.createElement("h2"); h.textContent = c.nombre;
     const e = document.createElement("span"); e.className = "edad"; e.textContent = c.edad;
-    cab.append(h, e);
+    cab.append(ini, h, e);
     const m = document.createElement("p"); m.className = "motivo"; m.textContent = c.motivo;
     const d = document.createElement("p"); d.className = "desafio"; d.textContent = c.desafio;
     const f = document.createElement("span"); f.className = "foco"; f.textContent = "Foco CICAA: " + c.foco;
@@ -327,6 +371,7 @@ function pintarTarjetas() {
 }
 function elegirCaso(c) {
   casoActual = c; guardar("caso", c.id);
+  $("app").className = "layout " + (c.tono || "");
   $("fNombre").textContent = c.nombre; $("fEdad").textContent = c.edad; $("fRut").textContent = c.rut || "—";
   $("fAtencion").textContent = c.atencion; $("fMotivo").textContent = c.motivo;
   $("btnNueva").onclick();
@@ -607,6 +652,8 @@ $("form").addEventListener("submit", e => { e.preventDefault(); desbloquearAudio
 function pintarFeedback(texto) {
   const caja = $("feedback"); caja.textContent = "";
   const titulo = /^(Conectar|Identificar y comprender|Acordar|Ayudar|Hitos del caso|Para la próxima vez)\s*:?\s*(.*)$/i;
+  const claseTarea = n => "tarea t-" + n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").filter(x => !["y", "del", "la", "para"].includes(x))[0];
+  let proxima = null;
   const hito = /^[-•]?\s*(Logrado|En parte|Pendiente)\s*:\s*(.*)$/i;
   for (const linea of texto.split("\n")) {
     const h = linea.trim().match(hito);
@@ -618,9 +665,12 @@ function pintarFeedback(texto) {
     }
     const m = linea.trim().match(titulo);
     if (m) {
-      const t = document.createElement("strong"); t.textContent = m[1]; caja.append(t);
-      if (m[2]) caja.append(m[2] + "\n");
-    } else caja.append(linea + "\n");
+      const t = document.createElement("strong"); t.className = claseTarea(m[1]); t.textContent = m[1]; caja.append(t);
+      proxima = /pr[oó]xima/i.test(m[1]) ? document.createElement("span") : null;
+      if (proxima) { proxima.className = "proxima"; caja.append(proxima); }
+      if (m[2]) (proxima || caja).append(m[2] + (proxima ? " " : "\n"));
+    } else if (proxima && linea.trim()) proxima.append(linea.trim() + " ");
+    else caja.append(linea + "\n");
   }
 }
 function transcripcion() { return turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n"); }
