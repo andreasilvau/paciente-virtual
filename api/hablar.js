@@ -21,7 +21,7 @@ async function conElevenLabs(texto, caso, forzada) {
   const modelo = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
   let r;
   try {
-    r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}/stream?output_format=mp3_44100_128`, {
+    r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}/stream?output_format=mp3_44100_64`, {
       method: "POST",
       headers: {
         "xi-api-key": process.env.ELEVENLABS_API_KEY.trim(),
@@ -32,7 +32,7 @@ async function conElevenLabs(texto, caso, forzada) {
         text: texto,
         model_id: modelo,
         language_code: "es",
-        voice_settings: { stability: 0.4, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true },
+        voice_settings: { stability: 0.45, similarity_boost: 0.75, style: 0, use_speaker_boost: true },
       }),
     });
   } catch {
@@ -56,10 +56,10 @@ async function conElevenLabs(texto, caso, forzada) {
 
 // Algunos modelos no aceptan language_code; se reintenta una vez sin él.
 async function conElevenLabsSinIdioma(texto, voz, modelo) {
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}/stream?output_format=mp3_44100_128`, {
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voz)}/stream?output_format=mp3_44100_64`, {
     method: "POST",
     headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY.trim(), "Content-Type": "application/json", Accept: "audio/mpeg" },
-    body: JSON.stringify({ text: texto, model_id: modelo, voice_settings: { stability: 0.4, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true } }),
+    body: JSON.stringify({ text: texto, model_id: modelo, voice_settings: { stability: 0.45, similarity_boost: 0.75, style: 0, use_speaker_boost: true } }),
   });
   if (!r.ok) return error(502, `ElevenLabs (código ${r.status}): error del servicio.`);
   return new Response(r.body, { headers: AUDIO });

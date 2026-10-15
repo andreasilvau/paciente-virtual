@@ -60,7 +60,7 @@ export async function POST(request) {
       return Response.json({ texto });
     }
     if (!turnos.length || turnos[turnos.length - 1].role !== "user") return error(400, "No llegó tu intervención.");
-    const texto = await preguntarAClaude(MODELO_PACIENTE, reglasPaciente(caso), turnos, 300);
+    const texto = await preguntarAClaude(MODELO_PACIENTE, reglasPaciente(caso), turnos, 350);
     if (!texto) return error(502, "La paciente no alcanzó a responder. Vuelve a intentarlo.");
     return Response.json({ texto });
   } catch (e) {

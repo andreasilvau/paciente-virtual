@@ -70,6 +70,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 #msg { flex: 1; min-width: 0; min-height: 48px; max-height: 160px; resize: none; font: 1rem/1.45 var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
 #btnMic { width: 100%; padding: 16px; font-size: 1.05rem; background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 #btnMic.grabando { background: var(--rec); border-color: var(--rec); }
+#btnMic.hablando { background: var(--soft); color: var(--accent); border-color: var(--soft); }
 #btnMic { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .barras { display: inline-flex; align-items: center; gap: 3px; height: 22px; }
 .barras i { width: 4px; height: 4px; border-radius: 2px; background: currentColor; transition: height .08s linear; }
@@ -232,7 +233,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
       </section>
 
       <section class="log" id="log" aria-live="polite" aria-label="Entrevista">
-        <div class="vacio" id="vacio">Toca «Hablar», saluda y preséntate. Vuelve a tocar cuando termines de hablar. Recuerda los tres momentos: inicio, exploración y cierre.</div>
+        <div class="vacio" id="vacio">Toca «Iniciar conversación», saluda y preséntate. Después conversa con naturalidad: cuando dejas de hablar, tu intervención se envía sola y, cuando la paciente termina de responder, el micrófono vuelve a escucharte. Recuerda los tres momentos: inicio, exploración y cierre.</div>
       </section>
 
       <div id="aviso" class="aviso" role="status" hidden></div>
@@ -260,7 +261,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
       </section>
 
       <form class="compositor" id="form">
-        <button id="btnMic" type="button">Hablar</button>
+        <button id="btnMic" type="button">Iniciar conversación</button>
         <div class="fila">
           <textarea id="msg" rows="1" placeholder="O escribe tu intervención" aria-label="Tu intervención"></textarea>
           <button id="btnEnviar" type="submit">Enviar</button>
@@ -401,14 +402,23 @@ async function enviar(texto) {
     const { texto: resp } = await r.json();
     b.classList.remove("espera"); b.textContent = resp;
     turnos.push({ role: "assistant", content: resp });
-    hablar(resp);
-    if (DESPEDIDA.test(texto) && turnos.filter(t => t.role === "user").length >= 3) { $("sugerenciaCierre").hidden = false; mostrarAlFinal($("sugerenciaCierre")); }
+    const seDespide = DESPEDIDA.test(texto) && turnos.filter(t => t.role === "user").length >= 3;
+    if (seDespide) { $("sugerenciaCierre").hidden = false; mostrarAlFinal($("sugerenciaCierre")); pausarConversacion(); }
+    estado(false);
+    // Mientras la paciente habla el micrófono espera; al terminar, vuelve a escuchar solo.
+    pintarMic("hablando");
+    await hablar(resp);
+    if (!grabador && !ocupado) {
+      if (modoConversacion && $("secFeedback").hidden && !$("app").hidden) empezarGrabacion();
+      else pintarMic();
+    }
   } catch (e) {
     turnos.pop(); contar(); b.parentElement.remove(); mia.parentElement.remove();
     $("vacio").hidden = turnos.length > 0;
     msg.value = texto; ajustar();
     mostrarAviso(e.message);
-  } finally { estado(false); }
+    pausarConversacion();
+  } finally { if (ocupado) estado(false); }
 }
 
 /* Voz de la paciente (Azure) */
@@ -418,12 +428,20 @@ function desbloquearAudio() {
   reproductor.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
   reproductor.play().catch(() => {});
 }
+// Espera a que la voz termine (o se interrumpa) para seguir con la conversación.
+function finDelAudio() {
+  return new Promise(listo => {
+    if (reproductor.paused || reproductor.ended) return listo();
+    const fin = () => { for (const ev of ["ended", "pause", "error"]) reproductor.removeEventListener(ev, fin); listo(); };
+    for (const ev of ["ended", "pause", "error"]) reproductor.addEventListener(ev, fin);
+  });
+}
 async function hablar(texto) {
   if (!vozActiva || !servicios.voz) return;
   try {
     // El audio se reproduce mientras va llegando, sin esperar el archivo completo.
     reproductor.src = "/api/hablar?" + new URLSearchParams({ texto, c: codigo, caso: casoActual ? casoActual.id : "" });
-    try { await reproductor.play(); return; }
+    try { await reproductor.play(); await finDelAudio(); return; }
     catch (e) { if (e && e.name === "NotAllowedError") throw e; }
     // Si falló, se pide de nuevo de la forma normal para mostrar el motivo exacto.
     const r = await api("/api/hablar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto, caso: casoActual && casoActual.id }) });
@@ -431,9 +449,10 @@ async function hablar(texto) {
     reproductor.src = url;
     reproductor.onended = () => URL.revokeObjectURL(url);
     await reproductor.play();
+    await finDelAudio();
   } catch (e) {
     const detalle = e && e.message && /^(Azure|ElevenLabs)/.test(e.message) ? " " + e.message
-      : e && e.name === "NotAllowedError" ? " El navegador bloqueó el audio: toca «Hablar» o «Enviar» y vuelve a intentarlo." : "";
+      : e && e.name === "NotAllowedError" ? " El navegador bloqueó el audio: toca «Continuar conversación» o «Enviar» y vuelve a intentarlo." : "";
     mostrarAviso("No se pudo reproducir la voz; la respuesta queda escrita." + detalle);
   }
 }
@@ -451,72 +470,130 @@ function tipoGrabacion() {
   }
   return "";
 }
+// Conversación continua: después del primer toque, el micrófono se abre solo en cada turno
+// y la intervención se envía sola cuando la estudiante deja de hablar.
+const SILENCIO_FIN_MS = 1200;     // pausa que marca el fin de la intervención
+const VOZ_MINIMA_MS = 250;        // voz acumulada para considerar que habló (evita ruidos sueltos)
+const ESPERA_SIN_VOZ_MS = 15000;  // si nadie habla en este tiempo, la conversación se pausa
+let modoConversacion = false, seOyoVoz = false, pausaPorSilencio = false;
+
+function nombrePaciente() { return casoActual ? casoActual.nombre.split(" ")[0] : "La paciente"; }
+const BARRAS = '<span class="barras" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+function pintarMic(fase) {
+  const b = $("btnMic");
+  b.classList.toggle("grabando", fase === "escuchando");
+  b.classList.toggle("hablando", fase === "hablando");
+  if (fase === "escuchando") {
+    const ayuda = seOyoVoz ? "Te escucho… toca para enviar ya" : "Te escucho… habla cuando quieras";
+    const span = b.querySelector(".ayuda");
+    if (span) span.textContent = ayuda; else b.innerHTML = BARRAS + '<span class="ayuda">' + ayuda + "</span>";
+  } else if (fase === "transcribiendo") b.textContent = "Pensando…";
+  else if (fase === "hablando") b.textContent = vozActiva && servicios.voz ? nombrePaciente() + " está hablando… toca para responder" : "…";
+  else b.textContent = modoConversacion || turnos.length ? "Continuar conversación" : "Iniciar conversación";
+}
+function pausarConversacion() {
+  modoConversacion = false;
+  if (grabador) { seOyoVoz = false; terminarGrabacion(); }
+}
+
 async function empezarGrabacion() {
-  if (!navigator.mediaDevices || !window.MediaRecorder) { mostrarAviso("Este navegador no permite grabar. Escribe tu intervención."); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { mostrarAviso("Este navegador no permite grabar. Escribe tu intervención."); pausarConversacion(); pintarMic(); return; }
+  if (grabador) return;
   let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
-  catch (e) { mostrarAviso("No se pudo usar el micrófono. Revisa el permiso del navegador o escribe tu intervención."); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+  catch (e) { mostrarAviso("No se pudo usar el micrófono. Revisa el permiso del navegador o escribe tu intervención."); pausarConversacion(); pintarMic(); return; }
+  if (grabador || ocupado) { stream.getTracks().forEach(t => t.stop()); return; }
   const tipo = tipoGrabacion();
   grabador = tipo ? new MediaRecorder(stream, { mimeType: tipo }) : new MediaRecorder(stream);
-  trozos = [];
-  grabador.ondataavailable = e => { if (e.data.size) trozos.push(e.data); };
-  grabador.onstop = () => { stream.getTracks().forEach(t => t.stop()); procesarGrabacion(grabador.mimeType || tipo); };
-  grabador.start();
+  trozos = []; seOyoVoz = false; pausaPorSilencio = false;
+  const este = grabador;
+  este.ondataavailable = e => { if (e.data.size) trozos.push(e.data); };
+  este.onstop = () => { stream.getTracks().forEach(t => t.stop()); procesarGrabacion(este.mimeType || tipo, seOyoVoz); };
+  este.start();
   reproductor.pause();
-  $("btnMic").classList.add("grabando");
-  $("btnMic").innerHTML = '<span class="barras" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Escuchando… toca para terminar</span>';
-  medirVolumen(stream);
+  pintarMic("escuchando");
+  escucharVoz(stream);
   corteGrabacion = setTimeout(terminarGrabacion, MAX_GRABACION_MS);
 }
-// Barritas que se mueven con el volumen de la voz mientras se graba.
+// Mide el volumen: mueve las barritas y detecta cuándo la estudiante empieza y termina de hablar.
 let medidor = null;
-function medirVolumen(stream) {
+function escucharVoz(stream) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === "suspended") ctx.resume().catch(() => {});
-    const analizador = ctx.createAnalyser(); analizador.fftSize = 256;
+    const analizador = ctx.createAnalyser(); analizador.fftSize = 1024;
     ctx.createMediaStreamSource(stream).connect(analizador);
-    const datos = new Uint8Array(analizador.frequencyBinCount);
-    const barras = [...$("btnMic").querySelectorAll(".barras i")];
+    const datos = new Uint8Array(analizador.fftSize);
     const pesos = [0.55, 0.85, 1, 0.8, 0.5];
+    const comienzo = performance.now();
+    let ruido = 0.006, ultimo = comienzo, vozAcumulada = 0, ultimaVoz = 0;
     const paso = () => {
+      const ahora = performance.now(), dt = ahora - ultimo; ultimo = ahora;
       analizador.getByteTimeDomainData(datos);
       let suma = 0; for (const v of datos) { const d = (v - 128) / 128; suma += d * d; }
-      const nivel = Math.min(1, Math.sqrt(Math.sqrt(suma / datos.length)) * 2.2);
-      barras.forEach((b, i) => { b.style.height = Math.max(4, Math.round(22 * nivel * pesos[i])) + "px"; });
-      medidor.raf = requestAnimationFrame(paso);
+      const rms = Math.sqrt(suma / datos.length);
+      const umbral = Math.max(0.015, ruido * 3);
+      if (rms > umbral) {
+        vozAcumulada += dt; ultimaVoz = ahora;
+        if (!seOyoVoz && vozAcumulada >= VOZ_MINIMA_MS) { seOyoVoz = true; pintarMic("escuchando"); }
+      } else {
+        ruido = ruido * 0.95 + rms * 0.05; // el ruido de fondo se ajusta solo
+        if (!seOyoVoz && ahora - ultimaVoz > 600) vozAcumulada = Math.max(0, vozAcumulada - dt);
+      }
+      const nivel = Math.min(1, Math.sqrt(Math.sqrt(rms)) * 2.2);
+      $("btnMic").querySelectorAll(".barras i").forEach((b, i) => { b.style.height = Math.max(4, Math.round(22 * nivel * pesos[i])) + "px"; });
+      if (seOyoVoz && ahora - ultimaVoz > SILENCIO_FIN_MS) { terminarGrabacion(); return; }
+      if (!seOyoVoz && ahora - comienzo > ESPERA_SIN_VOZ_MS) { pausaPorSilencio = true; modoConversacion = false; terminarGrabacion(); return; }
     };
-    medidor = { ctx, raf: requestAnimationFrame(paso) };
-  } catch (e) { medidor = null; }
+    // setInterval sigue funcionando aunque la pestaña quede en segundo plano.
+    medidor = { ctx, intervalo: setInterval(paso, 50) };
+  } catch (e) { medidor = null; seOyoVoz = true; } // sin medidor, se graba como antes y se envía al tocar
 }
 function pararMedidor() {
   if (!medidor) return;
-  cancelAnimationFrame(medidor.raf); medidor.ctx.close().catch(() => {}); medidor = null;
+  clearInterval(medidor.intervalo); medidor.ctx.close().catch(() => {}); medidor = null;
 }
 function terminarGrabacion() {
   clearTimeout(corteGrabacion);
   pararMedidor();
   if (grabador && grabador.state !== "inactive") grabador.stop();
-  $("btnMic").classList.remove("grabando"); $("btnMic").textContent = "Hablar";
+  else grabador = null;
 }
-async function procesarGrabacion(tipo) {
+async function procesarGrabacion(tipo, hubVoz) {
   grabador = null;
   const blob = new Blob(trozos, { type: tipo || "audio/webm" });
-  if (blob.size < 2000) { mostrarAviso("No alcancé a escucharte. Mantén el micrófono un poco más."); return; }
+  if (!hubVoz || blob.size < 2000) {
+    if (pausaPorSilencio) mostrarAviso("Pausé la conversación porque no te escuché. Toca «Continuar conversación» cuando quieras seguir.");
+    pintarMic();
+    return;
+  }
   const ext = /mp4/.test(tipo) ? "mp4" : /ogg/.test(tipo) ? "ogg" : "webm";
   const form = new FormData(); form.append("audio", blob, "voz." + ext);
-  estado(true); $("btnMic").textContent = "Transcribiendo…";
+  estado(true); pintarMic("transcribiendo");
+  let texto = "";
   try {
     const r = await api("/api/transcribir", { method: "POST", body: form });
-    const { texto } = await r.json();
-    estado(false); $("btnMic").textContent = "Hablar";
-    if (!texto) { mostrarAviso("No se entendió lo que dijiste. Inténtalo de nuevo."); return; }
-    await enviar(texto);
-  } catch (e) { estado(false); $("btnMic").textContent = "Hablar"; mostrarAviso(e.message); }
+    texto = ((await r.json()).texto || "").trim();
+  } catch (e) { estado(false); pausarConversacion(); pintarMic(); mostrarAviso(e.message); return; }
+  estado(false);
+  if (!texto) {
+    // No se entendió: se vuelve a escuchar sin cortar la conversación.
+    mostrarAviso("No se entendió lo que dijiste. Repítelo, por favor.");
+    if (modoConversacion) empezarGrabacion(); else pintarMic();
+    return;
+  }
+  await enviar(texto);
 }
 $("btnMic").onclick = () => {
   desbloquearAudio();
-  if (grabador) terminarGrabacion(); else if (!ocupado) empezarGrabacion();
+  if (grabador) {
+    // Si ya habló, se envía de inmediato; si todavía no habla, se pausa la conversación.
+    if (seOyoVoz) terminarGrabacion(); else pausarConversacion();
+    return;
+  }
+  if (ocupado) return;
+  modoConversacion = true;
+  empezarGrabacion(); // si la paciente estaba hablando, se interrumpe y se escucha la respuesta
 };
 
 /* Texto */
@@ -552,7 +629,7 @@ $("btnFeedback").onclick = async () => {
   $("sugerenciaCierre").hidden = true;
   if (ocupado) return;
   if (turnos.filter(t => t.role === "user").length < 3) { mostrarAviso("Haz al menos tres intervenciones antes de pedir retroalimentación."); return; }
-  mostrarAviso(""); reproductor.pause();
+  pausarConversacion(); mostrarAviso(""); reproductor.pause(); pintarMic();
   $("rDuracion").textContent = $("reloj").textContent;
   $("rIntervenciones").textContent = turnos.filter(t => t.role === "user").length;
   $("rRespuestas").textContent = turnos.filter(t => t.role === "assistant").length;
@@ -581,20 +658,18 @@ $("btnCopiar").onclick = async () => {
   setTimeout(() => { $("btnCopiar").querySelector(".txt").textContent = "Copiar"; }, 2000);
 };
 $("btnNueva").onclick = () => {
-  reproductor.pause(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
+  pausarConversacion(); reproductor.pause(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
   log.querySelectorAll(".turno").forEach(e => e.remove()); $("vacio").hidden = false;
-  $("secFeedback").hidden = true; $("sugerenciaCierre").hidden = true; mostrarAviso(""); contar();
+  $("secFeedback").hidden = true; $("sugerenciaCierre").hidden = true; mostrarAviso(""); contar(); pintarMic();
 };
 $("btnSalirSeleccion").onclick = () => salir();
 $("btnPacientes").onclick = () => {
   if (turnos.length && !confirm("¿Cambiar de paciente? Se borrará la entrevista actual. Si la necesitas, primero usa «Copiar transcripción».")) return;
-  if (grabador) terminarGrabacion();
   $("btnNueva").onclick();
   mostrar("seleccion");
 };
 $("btnSalir").onclick = () => {
   if (turnos.length && !confirm("¿Salir? Se borrará la entrevista actual. Si la necesitas, primero usa «Copiar transcripción».")) return;
-  if (grabador) terminarGrabacion();
   $("btnNueva").onclick();
   salir();
   window.scrollTo(0, 0);
