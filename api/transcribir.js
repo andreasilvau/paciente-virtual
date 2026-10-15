@@ -31,3 +31,6 @@ export async function POST(request) {
   }
   return Response.json({ texto: String(data.text || "").trim() });
 }
+
+// Para "despertar" la función antes del primer turno.
+export function GET() { return new Response(null, { status: 204 }); }
