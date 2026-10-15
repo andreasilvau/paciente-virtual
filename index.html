@@ -216,6 +216,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .seleccion { padding-bottom: 32px; }
 .tarjeta .edad { white-space: nowrap; }
 .resumen div { white-space: nowrap; }
+.ficha dl.resumen { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin-top: 10px; }
 #feedback { padding: 6px 18px 16px 32px; }
 #feedback .tarea { margin-left: -16px; }
 @media (max-width: 640px) {
@@ -228,6 +229,20 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   .inicio .mascota { max-width: 120px; }
   #feedback { padding: 6px 14px 14px 26px; }
 }
+/* Pequeños detalles: el micrófono "respira" mientras escucha y la paciente muestra ondas mientras habla */
+@media (prefers-reduced-motion: no-preference) {
+  #btnMic.grabando { animation: escucha 1.8s ease-in-out infinite; }
+  @keyframes escucha { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rec) 35%, transparent); } 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--rec) 0%, transparent); } }
+  .ondas-auto i { animation: onda 0.9s ease-in-out infinite; }
+  .ondas-auto i:nth-child(2) { animation-delay: .15s; } .ondas-auto i:nth-child(3) { animation-delay: .3s; }
+  .ondas-auto i:nth-child(4) { animation-delay: .45s; } .ondas-auto i:nth-child(5) { animation-delay: .6s; }
+  @keyframes onda { 0%, 100% { height: 4px; } 50% { height: 18px; } }
+  .cierre.celebra img { animation: celebra 0.9s ease-in-out 2; transform-origin: 50% 90%; }
+  @keyframes celebra { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-10px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
+}
+.ondas-auto i { height: 10px; }
+@media (max-width: 640px) { .riel #btnFeedback { flex-grow: 1.5; } }
+@media (max-width: 560px) { .cierre > div { display: contents; } .cierre .resumen { grid-column: 1 / -1; margin: 0; } }
 </style>
 </head>
 <body>
@@ -313,7 +328,8 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
             <dl class="resumen">
               <div><dt>Duración</dt><dd id="rDuracion">00:00</dd></div>
               <div><dt>Tus intervenciones</dt><dd id="rIntervenciones">0</dd></div>
-              <div><dt>Respuestas de la paciente</dt><dd id="rRespuestas">0</dd></div>
+              <div><dt>Respuestas</dt><dd id="rRespuestas">0</dd></div>
+              <div id="rHitosCaja" hidden><dt>Hitos logrados</dt><dd id="rHitos">0</dd></div>
             </dl>
           </div>
         </div>
@@ -391,19 +407,26 @@ function pintarTarjetas() {
 function elegirCaso(c) {
   casoActual = c; guardar("caso", c.id);
   $("app").className = "layout " + (c.tono || "");
+  const el = c.sexo === "masculino", nombre = c.nombre.split(" ")[0];
+  $("vacio").textContent = `${nombre} ya está ${el ? "sentado" : "sentada"} en el box, esperándote. Toca «Iniciar conversación», saluda y preséntate. Cuando dejas de hablar, tu intervención se envía sola, y cuando ${el ? "él" : "ella"} termina de responder, el micrófono vuelve a escucharte. Recuerda los tres momentos: inicio, exploración y cierre.`;
   $("fNombre").textContent = c.nombre; $("fEdad").textContent = c.edad; $("fRut").textContent = c.rut || "—";
   $("fAtencion").textContent = c.atencion; $("fMotivo").textContent = c.motivo;
   $("btnNueva").onclick();
   mostrar("app");
+}
+function saludoHora() {
+  const h = new Date().getHours();
+  return h >= 5 && h < 12 ? "¡Buenos días!" : h >= 12 && h < 20 ? "¡Buenas tardes!" : "¡Buenas noches!";
 }
 // Pestañas Estudiante / Docente en el inicio
 function elegirPestana(docente) {
   $("tabEstudiante").setAttribute("aria-selected", String(!docente));
   $("tabDocente").setAttribute("aria-selected", String(docente));
   $("formAcceso").hidden = docente; $("formDocente").hidden = !docente;
+  const saludo = saludoHora();
   document.querySelector("#inicio .globo").textContent = docente
-    ? "¡Hola, profe! Ingresa tu código docente para editar los personajes."
-    : "¡Hola! Antes de entrar al box, ingresa el código que te entregó tu docente.";
+    ? saludo.replace("!", ", profe!") + " Ingresa tu código docente para editar los personajes."
+    : saludo + " Antes de entrar al box, ingresa el código que te entregó tu docente.";
   (docente ? $("codigoDocenteInicio") : $("codigo")).focus();
 }
 $("tabEstudiante").onclick = () => elegirPestana(false);
@@ -424,7 +447,7 @@ $("formAcceso").addEventListener("submit", e => {
 function burbuja(quien, texto) {
   $("vacio").hidden = true;
   const t = document.createElement("div"); t.className = "turno " + quien;
-  const n = document.createElement("span"); n.className = "label"; n.textContent = quien === "yo" ? "Tú" : "Paciente";
+  const n = document.createElement("span"); n.className = "label"; n.textContent = quien === "yo" ? "Tú" : nombrePaciente();
   const b = document.createElement("div"); b.className = "burbuja"; b.textContent = texto;
   t.append(n, b); log.append(t); mostrarAlFinal(t);
   return b;
@@ -552,7 +575,11 @@ function pintarMic(fase) {
     const span = b.querySelector(".ayuda");
     if (span) span.textContent = ayuda; else b.innerHTML = BARRAS + '<span class="ayuda">' + ayuda + "</span>";
   } else if (fase === "transcribiendo") b.textContent = "Pensando…";
-  else if (fase === "hablando") b.textContent = vozActiva && servicios.voz ? nombrePaciente() + " está hablando… toca para responder" : "…";
+  else if (fase === "hablando") {
+    if (!vozActiva || !servicios.voz) { b.textContent = "…"; return; }
+    b.innerHTML = '<span class="barras ondas-auto" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span></span>';
+    b.lastChild.textContent = nombrePaciente() + " está hablando… toca para responder";
+  }
   else b.textContent = modoConversacion || turnos.length ? "Continuar conversación" : "Iniciar conversación";
 }
 function pausarConversacion() {
@@ -702,7 +729,7 @@ $("btnFeedback").onclick = async () => {
   $("rDuracion").textContent = $("reloj").textContent;
   $("rIntervenciones").textContent = turnos.filter(t => t.role === "user").length;
   $("rRespuestas").textContent = turnos.filter(t => t.role === "assistant").length;
-  $("cierre").classList.add("revisando");
+  $("cierre").classList.add("revisando"); $("cierre").classList.remove("celebra"); $("rHitosCaja").hidden = true;
   $("globoCierre").textContent = "Estoy revisando tu entrevista, dame unos segundos…";
   $("feedback").textContent = "";
   $("secFeedback").hidden = false;
@@ -710,13 +737,23 @@ $("btnFeedback").onclick = async () => {
   estado(true);
   try {
     const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnos, modo: "feedback", caso: casoActual && casoActual.id }) });
-    pintarFeedback((await r.json()).texto);
+    const textoFb = (await r.json()).texto;
+    pintarFeedback(textoFb);
+    const hitos = textoFb.split("\n").map(l => l.trim().match(/^[-•]?\s*(Logrado|En parte|Pendiente)\s*:/i)).filter(Boolean);
+    const logrados = hitos.filter(h => /logrado/i.test(h[1])).length;
+    $("rHitosCaja").hidden = !hitos.length;
+    $("rHitos").textContent = `${logrados} de ${hitos.length}`;
     const animos = [
       "¡Terminaste la entrevista! Aquí tienes lo que funcionó y una idea para la próxima.",
       "¡Bien hecho! Cada entrevista te deja algo nuevo. Esto es lo que vi.",
       "¡Listo! Revisa con calma; lo importante es lo que te llevas para la próxima atención.",
     ];
-    $("globoCierre").textContent = animos[Math.floor(Math.random() * animos.length)];
+    $("globoCierre").textContent = hitos.length && logrados === hitos.length
+      ? "¡Lograste todos los hitos del caso! Igual revisa los detalles: siempre hay algo que pulir."
+      : hitos.length && logrados === 0
+        ? "Este caso tenía sus desafíos. Los hitos pendientes son tu mapa para la próxima entrevista."
+        : animos[Math.floor(Math.random() * animos.length)];
+    $("cierre").classList.toggle("celebra", hitos.length > 0 && logrados === hitos.length);
   } catch (e) { $("secFeedback").hidden = true; mostrarAviso(e.message); }
   finally { $("cierre").classList.remove("revisando"); estado(false); }
 };
@@ -751,6 +788,7 @@ $("btnSalir").onclick = () => {
   try { localStorage.removeItem("codigo"); } catch (e) {}
   codigo = "";
   mostrar("inicio");
+  document.querySelector("#inicio .globo").textContent = saludoHora() + " Antes de entrar al box, ingresa el código que te entregó tu docente.";
   try {
     const d = await (await fetch("/api/estado")).json();
     servicios = d.servicios || {};
