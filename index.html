@@ -207,19 +207,38 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 #feedback .t-acordar { --c: var(--c-acordar); } #feedback .t-ayudar { --c: var(--c-ayudar); } #feedback .t-hitos { --c: var(--c-hitos); }
 #feedback .t-proxima { --c: var(--accent); }
 #feedback .proxima { display: block; background: var(--soft); border-radius: 8px; padding: 10px 14px; margin-top: 6px; }
+/* Composición: el inicio centrado en la pantalla y la entrevista en una columna de lectura */
+.inicio { max-width: 860px; width: 100%; margin-inline: auto; min-height: calc(100svh - 40px); align-content: center; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 32px; padding-bottom: 24px; }
+.inicio .mascota { max-width: 260px; }
+.inicio header { gap: 8px; margin-bottom: 4px; }
+.inicio h1 { font-size: clamp(1.7rem, 1.2rem + 1.8vw, 2.3rem); line-height: 1.1; }
+.layout { grid-template-columns: 88px minmax(0, 800px); justify-content: center; }
+.seleccion { padding-bottom: 32px; }
+.tarjeta .edad { white-space: nowrap; }
+.resumen div { white-space: nowrap; }
+#feedback { padding: 6px 18px 16px 32px; }
+#feedback .tarea { margin-left: -16px; }
+@media (max-width: 640px) {
+  .layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .inicio { grid-template-columns: 1fr; min-height: 0; align-content: start; gap: 14px; padding-top: 8px; }
+  .inicio .bienvenida { display: contents; }
+  .inicio header { order: -1; }
+  .inicio .mascota { max-width: 120px; }
+  #feedback { padding: 6px 14px 14px 26px; }
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <span class="label">Simulación · Entrenamiento en anamnesis</span>
-    <h1>Paciente Virtual Conversacional</h1>
-    <p class="lead">Estás en el box. Conduce la entrevista como en una atención real: la paciente responde según lo que le preguntes y cómo la trates.</p>
-  </header>
-
   <section class="inicio" id="inicio" hidden>
     <img class="mascota" src="/mascota.webp" width="440" height="536" alt="Robot con delantal clínico saludando con la mano">
     <div class="bienvenida">
+      <header>
+        <h1>Paciente Virtual Conversacional</h1>
+        <p class="lead">Entrena la anamnesis en un box simulado: la paciente responde según lo que le preguntes y cómo la trates.</p>
+      </header>
       <p class="globo">¡Hola! Antes de entrar al box, ingresa el código que te entregó tu docente.</p>
       <div class="pestanas" role="tablist" aria-label="Tipo de acceso">
         <button type="button" role="tab" id="tabEstudiante" aria-selected="true" aria-controls="formAcceso">Estudiante</button>
