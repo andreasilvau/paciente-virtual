@@ -754,7 +754,7 @@ function tipoGrabacion() {
 }
 // Conversación continua: después del primer toque, el micrófono se abre solo en cada turno
 // y la intervención se envía sola cuando la estudiante deja de hablar.
-const SILENCIO_FIN_MS = 1000;
+const SILENCIO_FIN_MS = 900;
 const SILENCIO_DICTADO_MS = 900; // con dictado del navegador: pausa sin palabras nuevas que cierra la intervención     // pausa que marca el fin de la intervención
 const VOZ_MINIMA_MS = 250;        // voz acumulada para considerar que habló (evita ruidos sueltos)
 const ESPERA_SIN_VOZ_MS = 15000;  // si nadie habla en este tiempo, la conversación se pausa
@@ -802,7 +802,8 @@ function pausarConversacion() {
    apenas terminas de hablar, sin subir el audio ni esperar la transcripción. Si falla, se vuelve a la grabación normal. */
 const Reconocedor = window.SpeechRecognition || window.webkitSpeechRecognition;
 const parametros = new URLSearchParams(location.search);
-let usarReconocedor = Boolean(Reconocedor) && parametros.get("transcripcion") !== "servidor";
+// En celulares Android el dictado del navegador puede dejar muda la voz de la paciente, así que solo se usa si se pide con ?transcripcion=navegador.
+let usarReconocedor = Boolean(Reconocedor) && parametros.get("transcripcion") === "navegador";
 function mostrarDictado(t) { const d = $("dictado"); t = (t || "").trim(); d.hidden = !t; d.textContent = t; }
 function empezarReconocimiento(inicioPrevio) {
   let reco;
