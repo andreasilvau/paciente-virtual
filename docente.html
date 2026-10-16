@@ -57,6 +57,18 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .ayuda { color: var(--muted); font-size: .82rem; }
 .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .check { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.label-campo { font-weight: 700; font-size: .9rem; }
+.focos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px; }
+.foco-op { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+.foco-op:has(input:checked) { border-color: var(--accent); background: var(--soft); }
+.foco-op input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.foco-op span { display: flex; flex-direction: column; gap: 2px; }
+.foco-op small { color: var(--muted); font-size: .82rem; line-height: 1.35; }
+#sugerenciaFoco.alerta { color: var(--warn); font-weight: 700; }
+.guia-foco summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 32px; }
+.guia-foco table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: .9rem; }
+.guia-foco th, .guia-foco td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.guia-foco thead th { color: var(--muted); font-weight: 700; }
 .barra { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 #estadoGuardado { color: var(--muted); }
 #estadoGuardado.ok { color: var(--ok); font-weight: 700; }
@@ -123,9 +135,31 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       <fieldset>
         <legend>Diseño docente</legend>
         <div class="campo"><label for="f_nivel_dificultad">Nivel</label><select id="f_nivel_dificultad"><option>Básico</option><option>Intermedio</option><option>Avanzado</option></select></div>
-        <div class="campo"><label for="f_foco_cicaa">Foco CICAA</label><input type="text" id="f_foco_cicaa" placeholder="ej. Conectar · Identificar"></div>
         <div class="campo"><label for="f_orden">Orden en la lista</label><input type="number" id="f_orden" step="10"></div>
         <div class="campo"><label class="check"><input type="checkbox" id="f_activo"> Visible para estudiantes</label></div>
+        <div class="campo ancho" role="group" aria-labelledby="tituloFoco">
+          <span class="label-campo" id="tituloFoco">Foco CICAA</span>
+          <input type="hidden" id="f_foco_cicaa">
+          <div class="focos">
+            <label class="foco-op"><input type="checkbox" data-foco="Conectar"><span><b>Conectar</b><small>Crear confianza: saludo, presentación, confidencialidad, escucha y empatía.</small></span></label>
+            <label class="foco-op"><input type="checkbox" data-foco="Identificar"><span><b>Identificar y comprender</b><small>Explorar el motivo, caracterizar síntomas y conocer las ideas, preocupaciones y expectativas.</small></span></label>
+            <label class="foco-op"><input type="checkbox" data-foco="Acordar"><span><b>Acordar</b><small>Explicar, verificar que entendió y decidir en conjunto (métodos, exámenes, próximos pasos).</small></span></label>
+            <label class="foco-op"><input type="checkbox" data-foco="Ayudar"><span><b>Ayudar</b><small>Plan, recursos y redes de apoyo, seguridad y cierre de la entrevista.</small></span></label>
+          </div>
+          <span class="ayuda" id="sugerenciaFoco" role="status"></span>
+          <details class="guia-foco">
+            <summary>Guía para elegir el foco según la dificultad del caso</summary>
+            <table>
+              <thead><tr><th scope="col">Nivel</th><th scope="col">Cuántas tareas</th><th scope="col">Cómo es el caso</th><th scope="col">Foco habitual</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Básico</th><td>1 o 2</td><td>Paciente que colabora, motivo claro y poca información escondida.</td><td>Conectar, o Conectar e Identificar.</td></tr>
+                <tr><th scope="row">Intermedio</th><td>2</td><td>Hay una barrera (vergüenza, prisa, miedo) o información que solo cuenta si se la preguntan.</td><td>Conectar e Identificar; Identificar y Acordar si hay que tomar una decisión.</td></tr>
+                <tr><th scope="row">Avanzado</th><td>3 o 4</td><td>Temas sensibles o riesgo (violencia, abuso), barrera idiomática o cultural, o una forma de comunicarse distinta.</td><td>Conectar, Identificar y Ayudar; agrega Acordar si hay que llegar a acuerdos.</td></tr>
+              </tbody>
+            </table>
+            <p class="ayuda">Señales del caso que piden cada tarea: <b>Conectar</b> si hay vergüenza, desconfianza o es adolescente; <b>Identificar</b> si hay información oculta o síntomas que precisar; <b>Acordar</b> si hay que elegir entre opciones o asegurar que entendió; <b>Ayudar</b> si hay riesgo, falta de red de apoyo o necesidad de derivar.</p>
+          </details>
+        </div>
         <div class="campo ancho"><label for="f_desafio">Desafío comunicacional</label><input type="text" id="f_desafio"><span class="ayuda">Lo ve el estudiante al elegir y lo usa la retroalimentación final.</span></div>
         <div class="campo ancho"><label for="f_carreras">Carreras</label><input type="text" id="f_carreras" placeholder="Obstetricia, Enfermería"><span class="ayuda">Separadas por coma.</span></div>
       </fieldset>
@@ -230,6 +264,7 @@ function abrir(c) {
     else el.value = Array.isArray(v) ? v.join(", ") : (v ?? "");
   }
   $("f_frase").value = c ? fraseDe(c) : "Hola, buenas tardes.";
+  pintarFocos();
   sincronizarListaVoz();
   for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && Boolean(c));
   $("f_frase").disabled = false; $("f_voz_lista").disabled = !editable && false;
@@ -244,6 +279,28 @@ function fraseDe(c) {
 $("btnNuevo").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Crear otro igual?")) return; abrir(null); $("f_id").focus(); };
 $("editor").addEventListener("input", () => { cambios = true; $("estadoGuardado").textContent = "Cambios sin guardar"; $("estadoGuardado").className = ""; });
 window.addEventListener("beforeunload", e => { if (cambios) { e.preventDefault(); e.returnValue = ""; } });
+
+/* Foco CICAA: casillas que se guardan como texto ("Conectar · Identificar") y una sugerencia según el nivel */
+const FOCOS = ["Conectar", "Identificar", "Acordar", "Ayudar"];
+const RANGO = { "Básico": [1, 2], "Intermedio": [2, 2], "Avanzado": [3, 4] };
+function pintarFocos() {
+  const texto = $("f_foco_cicaa").value.toLowerCase();
+  for (const el of document.querySelectorAll("[data-foco]")) { el.checked = texto.includes(el.dataset.foco.toLowerCase()); el.disabled = !editable; }
+  sugerirFoco();
+}
+function sugerirFoco() {
+  const n = document.querySelectorAll("[data-foco]:checked").length, nivel = $("f_nivel_dificultad").value, [min, max] = RANGO[nivel] || [1, 4];
+  const s = $("sugerenciaFoco");
+  const recomendado = min === max ? `${min} tareas` : `${min} a ${max} tareas`;
+  if (!n) { s.textContent = `Para un caso ${nivel.toLowerCase()} se recomiendan ${recomendado}.`; s.className = "ayuda"; }
+  else if (n < min || n > max) { s.textContent = `Elegiste ${n} ${n === 1 ? "tarea" : "tareas"}; para un caso ${nivel.toLowerCase()} se recomiendan ${recomendado}. Puedes dejarlo así si el caso lo justifica.`; s.className = "ayuda alerta"; }
+  else { s.textContent = `Bien: ${n === 1 ? "1 tarea calza" : n + " tareas calzan"} con un caso ${nivel.toLowerCase()}.`; s.className = "ayuda"; }
+}
+for (const el of document.querySelectorAll("[data-foco]")) el.addEventListener("change", () => {
+  $("f_foco_cicaa").value = FOCOS.filter(f => document.querySelector(`[data-foco="${f}"]`).checked).join(" · ");
+  sugerirFoco();
+});
+$("f_nivel_dificultad").addEventListener("change", sugerirFoco);
 
 /* Voces */
 async function cargarVoces() {

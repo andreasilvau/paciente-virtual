@@ -59,7 +59,7 @@ Hitos del caso
 En los cuatro primeros escribe dos o tres frases. En "Ayudar" incluye cómo cerró la entrevista: si resumió, si preguntó si había algo más que preocupara y si respondió la pregunta pendiente ${el ? "del paciente" : "de la paciente"}.
 En "Hitos del caso" escribe una línea por cada hito de la lista de abajo, empezando con "Logrado:", "En parte:" o "Pendiente:", según lo que muestre la transcripción.
 
-En cada uno de los cuatro primeros apartados cita una intervención concreta de la estudiante que funcionó o que se puede mejorar. Considera el desafío principal de este caso: ${c.desafio} Menciona si la estudiante llegó a descubrir la información clave que ${elP} solo revela si se lo preguntan. Cierra con una línea titulada "Para la próxima vez" con una sola sugerencia prioritaria. Texto plano, sin asteriscos ni símbolos de formato. No evalúes ${alP} ni pongas nota.
+En cada uno de los cuatro primeros apartados cita una intervención concreta de la estudiante que funcionó o que se puede mejorar. Considera el desafío principal de este caso: ${c.desafio}${c.foco_cicaa ? ` Las tareas CICAA en que se centra este caso son: ${c.foco_cicaa}; dales más detalle en tu retroalimentación.` : ""} Menciona si la estudiante llegó a descubrir la información clave que ${elP} solo revela si se lo preguntan. Cierra con una línea titulada "Para la próxima vez" con una sola sugerencia prioritaria. Texto plano, sin asteriscos ni símbolos de formato. No evalúes ${alP} ni pongas nota.
 
 Hitos que la estudiante debía lograr:
 ${(c.hitos || "").trim() || "(sin hitos definidos: omite ese apartado)"}
