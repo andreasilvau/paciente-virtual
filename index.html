@@ -244,6 +244,8 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .escenario.escuchando #ondas { color: var(--rec); }
 #estadoTitulo { font: 700 1.6rem/1.2 var(--display); }
 .escenario .ayuda { color: var(--muted); max-width: 46ch; }
+.dictado { color: var(--muted); font-style: italic; max-width: 46ch; }
+.dictado::before { content: "Tú: "; font-style: normal; font-weight: 700; }
 .subtitulo { font-size: 1.3rem; line-height: 1.45; max-width: 34ch; text-wrap: pretty; }
 .controles { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
 .pildora { min-height: 52px; padding: 0 22px; border-radius: 26px; }
@@ -382,6 +384,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         <span class="barras" id="ondas" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
         <h1 id="estadoTitulo">La paciente te espera</h1>
         <p class="ayuda" id="estadoAyuda">Toca el micrófono, saluda y preséntate.</p>
+        <p class="dictado" id="dictado" hidden></p>
         <p class="subtitulo" id="subtitulo" hidden></p>
         <div class="controles">
           <button id="btnEscribir" type="button" class="pildora" aria-expanded="false" aria-controls="form">Escribir</button>
@@ -393,6 +396,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
           <button id="btnEnviar" type="submit">Enviar</button>
         </form>
         <div id="aviso" class="aviso" role="status" hidden></div>
+        <p class="nota" id="tiempos" hidden></p>
         <div id="sugerenciaCierre" class="sugerencia" role="status" hidden>
           <span>Parece que cerraste la entrevista. ¿Quieres ver cómo te fue?</span>
           <button type="button" class="primario" id="btnSugerenciaFeedback">Pedir retroalimentación</button>
@@ -598,6 +602,8 @@ async function enviar(texto) {
   texto = (texto || "").trim();
   if (!texto || ocupado) return;
   mostrarAviso(""); callarPaciente();
+  marcas.texto = performance.now(); marcas.primerTexto = marcas.voz = 0;
+  if (!marcas.finHabla || marcas.texto - marcas.finHabla > 8000) marcas.finHabla = 0;
   if (!inicio) inicio = Date.now();
   turnos.push({ role: "user", content: texto }); contar(); actualizarGuia();
   const mia = burbuja("yo", texto);
@@ -620,6 +626,7 @@ async function enviar(texto) {
         const { value, done } = await lector.read();
         if (done) break;
         bruto += dec.decode(value, { stream: true });
+        if (!marcas.primerTexto && bruto.trim()) marcas.primerTexto = performance.now();
         if (bruto.trim()) { b.classList.remove("espera"); b.textContent = bruto.trimStart(); mostrarSubtitulo(bruto); mostrarAlFinal(b.parentElement); }
         if (voz && !leidoHasta) { const corte = primerCorte(bruto); if (corte) { voz.agregar(bruto.slice(0, corte)); leidoHasta = corte; } }
       }
@@ -700,7 +707,7 @@ function nuevaVoz() {
         const a = reproductores[i % 2];
         preparar(i); sonando = i; preparar(i + 1);
         if (i === 0) pintarMic("hablando");
-        try { await a.play(); }
+        try { await a.play(); if (i === 0) { marcas.voz = performance.now(); informarTiempos(); } }
         catch (e) { if (vigente()) await vozDeRespaldo(partes.slice(i).join(" "), a, e); return; }
         await finDelAudio(a);
         if (!vigente()) return;
@@ -767,7 +774,8 @@ function pintarMic(fase) {
   b.classList.toggle("grabando", fase === "escuchando");
   b.classList.toggle("hablando", fase === "hablando");
   esc.classList.toggle("escuchando", fase === "escuchando");
-  $("ondas").classList.toggle("ondas-auto", fase === "hablando" && vozActiva && servicios.voz);
+  const dictando = fase === "escuchando" && grabador && grabador.tipo === "dictado" && seOyoVoz;
+  $("ondas").classList.toggle("ondas-auto", (fase === "hablando" && vozActiva && servicios.voz) || dictando);
   const empezada = modoConversacion || turnos.length > 0;
   const [titulo, ayuda, etiqueta] =
     fase === "escuchando" ? ["Te escucho…", seOyoVoz ? "Cuando dejes de hablar se envía solo. Toca el micrófono para enviarlo ya." : "Habla cuando quieras. Toca el micrófono para pausar.", seOyoVoz ? "Enviar ahora" : "Pausar conversación"]
@@ -780,12 +788,71 @@ function pintarMic(fase) {
 }
 function pausarConversacion() {
   modoConversacion = false;
-  if (grabador) { seOyoVoz = false; terminarGrabacion(); }
+  if (grabador) { seOyoVoz = false; grabador.descartar = true; terminarGrabacion(); }
+}
+
+/* Dictado del navegador: si el navegador reconoce la voz por sí mismo (Chrome, Edge, Safari), el texto está listo
+   apenas terminas de hablar, sin subir el audio ni esperar la transcripción. Si falla, se vuelve a la grabación normal. */
+const Reconocedor = window.SpeechRecognition || window.webkitSpeechRecognition;
+const parametros = new URLSearchParams(location.search);
+let usarReconocedor = Boolean(Reconocedor) && parametros.get("transcripcion") !== "servidor";
+function mostrarDictado(t) { const d = $("dictado"); t = (t || "").trim(); d.hidden = !t; d.textContent = t; }
+function empezarReconocimiento(inicioPrevio) {
+  let reco;
+  try { reco = new Reconocedor(); } catch (e) { usarReconocedor = false; return empezarGrabacion(); }
+  reco.lang = "es-CL"; reco.interimResults = true; reco.continuous = false; reco.maxAlternatives = 1;
+  let finalTxt = "", provisional = "";
+  const g = { tipo: "dictado", state: "recording", inicio: inicioPrevio || performance.now(), stop() { if (this.state === "recording") { this.state = "stopping"; try { reco.stop(); } catch (e) {} } } };
+  grabador = g; seOyoVoz = false; pausaPorSilencio = false;
+  reco.onspeechstart = () => { if (!seOyoVoz) { seOyoVoz = true; pintarMic("escuchando"); } };
+  reco.onresult = e => {
+    let f = "", pr = "";
+    for (const r of e.results) { if (r.isFinal) f += r[0].transcript; else pr += r[0].transcript; }
+    finalTxt = f; provisional = pr; mostrarDictado(f + pr);
+    if (!seOyoVoz) { seOyoVoz = true; pintarMic("escuchando"); }
+  };
+  reco.onerror = e => { g.error = e.error; };
+  reco.onend = () => { g.state = "inactive"; marcas.finHabla = performance.now(); finReconocimiento(g, (finalTxt || provisional).trim()); };
+  try { reco.start(); } catch (e) { grabador = null; usarReconocedor = false; return empezarGrabacion(); }
+  callarPaciente();
+  pintarMic("escuchando");
+  corteGrabacion = setTimeout(terminarGrabacion, MAX_GRABACION_MS);
+}
+function finReconocimiento(g, texto) {
+  clearTimeout(corteGrabacion); if (grabador === g) grabador = null;
+  mostrarDictado("");
+  if (g.descartar) { pintarMic(); return; }
+  if (g.error === "not-allowed") { mostrarAviso("No se pudo usar el micrófono. Revisa el permiso del navegador o escribe tu intervención."); pausarConversacion(); pintarMic(); return; }
+  if (g.error && !["no-speech", "aborted"].includes(g.error)) {
+    // El dictado del navegador no funcionó aquí: se sigue con la grabación y la transcripción del servidor.
+    console.warn("Dictado del navegador:", g.error); usarReconocedor = false;
+    if (modoConversacion) empezarGrabacion(); else pintarMic();
+    return;
+  }
+  if (texto) { pintarMic("transcribiendo"); enviar(texto); return; }
+  if (modoConversacion && performance.now() - g.inicio < ESPERA_SIN_VOZ_MS) { empezarReconocimiento(g.inicio); return; }
+  if (modoConversacion) { modoConversacion = false; mostrarAviso("Pausé la conversación porque no te escuché. Toca el micrófono cuando quieras seguir."); }
+  pintarMic();
+}
+
+/* Tiempos de cada paso (para revisar dónde se demora). Se muestran en pantalla con ?tiempos=1 en la dirección. */
+const marcas = {};
+function informarTiempos() {
+  const s = (a, b) => (a && b ? ((b - a) / 1000).toFixed(1).replace(".", ",") + " s" : "—");
+  const partes = [
+    marcas.finHabla && marcas.texto ? "tu voz a texto " + s(marcas.finHabla, marcas.texto) : "",
+    "primera palabra de la paciente " + s(marcas.texto, marcas.primerTexto),
+    "voz " + s(marcas.primerTexto, marcas.voz),
+    "total " + s(marcas.finHabla || marcas.texto, marcas.voz),
+  ].filter(Boolean).join(" · ");
+  console.info("Tiempos:", partes, usarReconocedor ? "(dictado del navegador)" : "(transcripción del servidor)");
+  if (parametros.get("tiempos")) { $("tiempos").hidden = false; $("tiempos").textContent = partes + (usarReconocedor ? " · dictado del navegador" : " · transcripción del servidor"); }
 }
 
 async function empezarGrabacion() {
   if (!navigator.mediaDevices || !window.MediaRecorder) { mostrarAviso("Este navegador no permite grabar. Escribe tu intervención."); pausarConversacion(); pintarMic(); return; }
   if (grabador) return;
+  if (usarReconocedor) return empezarReconocimiento();
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
   catch (e) { mostrarAviso("No se pudo usar el micrófono. Revisa el permiso del navegador o escribe tu intervención."); pausarConversacion(); pintarMic(); return; }
@@ -843,6 +910,7 @@ function pararMedidor() {
 }
 function terminarGrabacion() {
   clearTimeout(corteGrabacion);
+  if (grabador && grabador.tipo !== "dictado") marcas.finHabla = performance.now();
   pararMedidor();
   if (grabador && grabador.state !== "inactive") grabador.stop();
   else grabador = null;
