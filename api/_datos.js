@@ -52,7 +52,7 @@ function desdeArchivo(c, i) {
 }
 
 let cache = null, cacheHora = 0;
-const VIGENCIA_MS = 60_000;
+const VIGENCIA_MS = 300_000; // 5 minutos: menos consultas a Supabase en cada turno
 export function olvidarCache() { cache = null; }
 
 // Todos los personajes, ordenados. Con incluirInactivos=false, solo los activos.

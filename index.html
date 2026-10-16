@@ -443,6 +443,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 const $ = id => document.getElementById(id);
 const log = $("log"), msg = $("msg"), aviso = $("aviso");
 const MAX_GRABACION_MS = 60000;
+let semilla = Math.floor(Math.random() * 1e6);
 let codigo = "", turnos = [], ocupado = false, inicio = null, vozActiva = true, servicios = {};
 let grabador = null, trozos = [], corteGrabacion = null;
 let audioDesbloqueado = false;
@@ -595,6 +596,11 @@ function primerCorte(t) {
     const fin = m.index + m[0].length;
     if (t.slice(0, fin).trim().length >= 12) return fin;
   }
+  // Si la primera frase es larga, se corta en una coma para que la voz parta antes.
+  for (const m of t.matchAll(/,(?=\s)/g)) {
+    const fin = m.index + 1;
+    if (t.slice(0, fin).trim().length >= 35) return fin;
+  }
   return 0;
 }
 
@@ -616,7 +622,7 @@ async function enviar(texto) {
   const sonando = voz ? voz.reproducir() : Promise.resolve();
   let bruto = "";
   try {
-    const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnos, caso: casoActual && casoActual.id, enVivo: true }) });
+    const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnos, caso: casoActual && casoActual.id, enVivo: true, semilla }) });
     let leidoHasta = 0;
     if (/json/.test(r.headers.get("content-type") || "")) bruto = (await r.json()).texto || "";
     else {
@@ -748,7 +754,8 @@ function tipoGrabacion() {
 }
 // Conversación continua: después del primer toque, el micrófono se abre solo en cada turno
 // y la intervención se envía sola cuando la estudiante deja de hablar.
-const SILENCIO_FIN_MS = 1000;     // pausa que marca el fin de la intervención
+const SILENCIO_FIN_MS = 1000;
+const SILENCIO_DICTADO_MS = 900; // con dictado del navegador: pausa sin palabras nuevas que cierra la intervención     // pausa que marca el fin de la intervención
 const VOZ_MINIMA_MS = 250;        // voz acumulada para considerar que habló (evita ruidos sueltos)
 const ESPERA_SIN_VOZ_MS = 15000;  // si nadie habla en este tiempo, la conversación se pausa
 let modoConversacion = false, seOyoVoz = false, pausaPorSilencio = false;
@@ -802,17 +809,31 @@ function empezarReconocimiento(inicioPrevio) {
   try { reco = new Reconocedor(); } catch (e) { usarReconocedor = false; return empezarGrabacion(); }
   reco.lang = "es-CL"; reco.interimResults = true; reco.continuous = false; reco.maxAlternatives = 1;
   let finalTxt = "", provisional = "";
-  const g = { tipo: "dictado", state: "recording", inicio: inicioPrevio || performance.now(), stop() { if (this.state === "recording") { this.state = "stopping"; try { reco.stop(); } catch (e) {} } } };
+  const g = { tipo: "dictado", state: "recording", inicio: inicioPrevio || performance.now(), stop() { if (this.state === "recording") { if (this.descartar) { this.state = "stopping"; try { reco.stop(); } catch (e) {} } else enviarYa(); } } };
   grabador = g; seOyoVoz = false; pausaPorSilencio = false;
   reco.onspeechstart = () => { if (!seOyoVoz) { seOyoVoz = true; pintarMic("escuchando"); } };
+  // Apenas dejas de hablar (sin palabras nuevas por un momento), se envía lo dictado sin esperar a que el navegador cierre.
+  const enviarYa = () => {
+    const t = (finalTxt + " " + provisional).trim();
+    if (!t || g.state !== "recording" || g.terminado) return;
+    g.terminado = true; g.state = "inactive"; marcas.finHabla = performance.now() - SILENCIO_DICTADO_MS;
+    try { reco.abort(); } catch (e) {}
+    finReconocimiento(g, t);
+  };
   reco.onresult = e => {
     let f = "", pr = "";
     for (const r of e.results) { if (r.isFinal) f += r[0].transcript; else pr += r[0].transcript; }
     finalTxt = f; provisional = pr; mostrarDictado(f + pr);
     if (!seOyoVoz) { seOyoVoz = true; pintarMic("escuchando"); }
+    clearTimeout(g.pausa); g.pausa = setTimeout(enviarYa, SILENCIO_DICTADO_MS);
   };
   reco.onerror = e => { g.error = e.error; };
-  reco.onend = () => { g.state = "inactive"; marcas.finHabla = performance.now(); finReconocimiento(g, (finalTxt || provisional).trim()); };
+  reco.onend = () => {
+    clearTimeout(g.pausa);
+    if (g.terminado) return;
+    g.terminado = true; g.state = "inactive"; marcas.finHabla = performance.now();
+    finReconocimiento(g, (finalTxt + " " + provisional).trim());
+  };
   try { reco.start(); } catch (e) { grabador = null; usarReconocedor = false; return empezarGrabacion(); }
   callarPaciente();
   pintarMic("escuchando");
@@ -1029,7 +1050,7 @@ $("btnCopiar").onclick = async () => {
   setTimeout(() => { $("btnCopiar").querySelector(".txt").textContent = "Copiar"; }, 2000);
 };
 $("btnNueva").onclick = () => {
-  pausarConversacion(); callarPaciente(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
+  pausarConversacion(); callarPaciente(); turnos = []; semilla = Math.floor(Math.random() * 1e6); inicio = null; $("reloj").textContent = "00:00";
   log.querySelectorAll(".turno").forEach(e => e.remove()); $("vacio").hidden = false;
   $("secFeedback").hidden = true; $("escenario").hidden = false; $("sugerenciaCierre").hidden = true; mostrarAviso(""); contar(); pintarMic();
   mostrarSubtitulo(""); actualizarGuia();

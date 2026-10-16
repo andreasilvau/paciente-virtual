@@ -101,8 +101,8 @@ export async function POST(request) {
       return Response.json({ texto });
     }
     if (!turnos.length || turnos[turnos.length - 1].role !== "user") return error(400, "No llegó tu intervención.");
-    if (body.enVivo) return await responderEnVivo(MODELO_PACIENTE, reglasPaciente(caso), turnos, 350);
-    const texto = await preguntarAClaude(MODELO_PACIENTE, reglasPaciente(caso), turnos, 350);
+    if (body.enVivo) return await responderEnVivo(MODELO_PACIENTE, reglasPaciente(caso, body.semilla), turnos, 350);
+    const texto = await preguntarAClaude(MODELO_PACIENTE, reglasPaciente(caso, body.semilla), turnos, 350);
     if (!texto) return error(502, "La paciente no alcanzó a responder. Vuelve a intentarlo.");
     return Response.json({ texto });
   } catch (e) {
