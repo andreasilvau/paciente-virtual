@@ -56,3 +56,9 @@ Variables en Vercel:
 Si faltan las variables de Supabase, la aplicación usa los personajes de `api/_casos.js` como respaldo (sin poder editarlos).
 
 En `/docente.html` se editan las capas, se activa o desactiva cada personaje y se elige su voz de ElevenLabs desde una lista con las voces de la cuenta, con botones para escucharla.
+
+## Actividades y guía de la entrevista
+
+- El código general (`ACCESS_CODE`) sirve para practicar fuera del aula: cada estudiante decide si usa la guía de los tres momentos.
+- En el panel docente, «Actividades y guía» crea códigos para cada clase o evaluación, cada uno con su regla: guía siempre visible, oculta (evaluación) o a elección del estudiante. Se pueden desactivar o borrar.
+- Los códigos de actividad se guardan en la tabla `actividades` de Supabase.

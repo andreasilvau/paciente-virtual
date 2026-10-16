@@ -82,7 +82,7 @@ async function preguntarAClaude(modelo, system, messages, maxTokens) {
 }
 
 export async function POST(request) {
-  const denegado = verificarAcceso(request);
+  const denegado = await verificarAcceso(request);
   if (denegado) return denegado;
   if (!process.env.ANTHROPIC_API_KEY) return error(500, "Falta configurar ANTHROPIC_API_KEY en Vercel.");
 

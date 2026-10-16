@@ -268,6 +268,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 
 /* Modo práctica: guía de los tres momentos */
 .interruptor { display: flex; gap: 10px; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; }
+.interruptor:has(input:disabled) { cursor: default; }
 .interruptor input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; margin: 0; }
 .guia { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .momento { display: flex; gap: 10px; align-items: flex-start; border-radius: 10px; padding: 8px; }
@@ -317,7 +318,8 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
       <form class="acceso" id="formAcceso" role="tabpanel" aria-labelledby="tabEstudiante">
         <label class="label" for="codigo">Código de acceso</label>
         <input type="password" id="codigo" autocomplete="off" placeholder="Te lo entrega tu docente">
-        <button class="primario" type="submit">Entrar</button>
+        <button class="primario" type="submit" id="btnEntrar">Entrar</button>
+        <p class="aviso" id="errorAcceso" role="alert" hidden></p>
       </form>
       <form class="acceso" id="formDocente" role="tabpanel" aria-labelledby="tabDocente" hidden>
         <label class="label" for="codigoDocenteInicio">Código de docente</label>
@@ -331,7 +333,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   <section class="seleccion" id="seleccion" hidden>
     <div class="saludo">
       <img src="/mascota.webp" width="440" height="536" alt="">
-      <p class="globo">¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.</p>
+      <p class="globo" id="globoSeleccion">¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.</p>
       <button type="button" id="btnSalirSeleccion" class="salir-sel" title="Salir y borrar el código guardado">Salir</button>
     </div>
     <div class="tarjetas" id="tarjetas"></div>
@@ -353,8 +355,9 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
       <section class="caja tiempo" aria-label="Tiempo de entrevista">
         <span id="reloj">00:00</span><span class="t-sub"><span id="cuenta">0</span> intervenciones</span>
       </section>
-      <section class="caja guia-caja" aria-label="Modo práctica">
+      <section class="caja guia-caja" id="guiaCaja" aria-label="Modo práctica">
         <label class="interruptor"><input type="checkbox" id="chkGuia"> Modo práctica: guía de la entrevista</label>
+        <p class="nota" id="notaGuia" hidden>Tu docente dejó la guía activada en esta actividad.</p>
         <ol class="guia" id="guia" hidden>
           <li class="momento" data-momento="1"><span class="num" aria-hidden="true">1</span><div><b>Inicio</b>
             <ul><li data-item="saludo">Saluda</li><li data-item="presentacion">Preséntate con tu nombre y rol</li><li data-item="confidencialidad">Habla de confidencialidad</li></ul></div></li>
@@ -521,11 +524,32 @@ $("formDocente").addEventListener("submit", e => {
   try { sessionStorage.setItem("docente", c); } catch (err) {}
   location.href = "/docente.html";
 });
-$("formAcceso").addEventListener("submit", e => {
+// Al entrar se comprueba el código: el general es para practicar libremente; el de una actividad trae la regla de la docente para la guía.
+let reglaGuia = "libre";
+$("formAcceso").addEventListener("submit", async e => {
   e.preventDefault();
-  codigo = $("codigo").value.trim(); if (!codigo) return;
-  mostrar("seleccion");
+  const c = $("codigo").value.trim(); if (!c) return;
+  $("errorAcceso").hidden = true; $("btnEntrar").disabled = true;
+  try {
+    const r = await fetch("/api/acceso", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ codigo: c }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || "No se pudo comprobar el código. Vuelve a intentarlo.");
+    codigo = c; aplicarReglaGuia(d.guia || "libre");
+    $("globoSeleccion").textContent = (d.actividad ? `Actividad: ${d.actividad}. ` : "") + "¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.";
+    mostrar("seleccion");
+  } catch (err) { $("errorAcceso").textContent = err.message; $("errorAcceso").hidden = false; }
+  finally { $("btnEntrar").disabled = false; }
 });
+// "con": la docente la deja siempre visible; "sin": oculta (evaluación); "libre": decide la estudiante y se recuerda.
+function aplicarReglaGuia(regla) {
+  reglaGuia = regla;
+  const chk = $("chkGuia");
+  $("guiaCaja").hidden = regla === "sin";
+  chk.disabled = regla !== "libre";
+  chk.checked = regla === "con" ? true : regla === "sin" ? false : leer("guia") !== "0";
+  $("notaGuia").hidden = regla !== "con";
+  $("guia").hidden = !chk.checked;
+}
 
 /* Conversación */
 function burbuja(quien, texto) {
@@ -988,12 +1012,12 @@ function actualizarGuia() {
   });
   document.querySelectorAll("#guia [data-item]").forEach(li => li.classList.toggle("hecho", hecho[li.dataset.item]));
 }
-$("chkGuia").onchange = () => { guardar("guia", $("chkGuia").checked ? "1" : "0"); $("guia").hidden = !$("chkGuia").checked; };
+$("chkGuia").onchange = () => { if (reglaGuia !== "libre") return; guardar("guia", $("chkGuia").checked ? "1" : "0"); $("guia").hidden = !$("chkGuia").checked; };
 
 /* Inicio */
 (async () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
-  $("chkGuia").checked = leer("guia") !== "0"; $("guia").hidden = !$("chkGuia").checked;
+  aplicarReglaGuia("libre");
   // El código no se guarda: cada vez que se abre la aplicación parte en el inicio.
   try { localStorage.removeItem("codigo"); } catch (e) {}
   codigo = "";

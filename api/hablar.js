@@ -104,7 +104,7 @@ async function conAzure(texto, caso, forzada) {
 }
 
 export async function POST(request) {
-  const denegado = verificarAcceso(request);
+  const denegado = await verificarAcceso(request);
   if (denegado) return denegado;
 
   let texto, caso;
@@ -116,7 +116,7 @@ export async function POST(request) {
 
 // Versión para que el navegador reproduzca el audio mientras va llegando.
 export async function GET(request) {
-  const denegado = verificarAcceso(request);
+  const denegado = await verificarAcceso(request);
   if (denegado) return denegado;
   const q = new URL(request.url).searchParams;
   const texto = String(q.get("texto") || "").trim().slice(0, 1500), caso = q.get("caso");

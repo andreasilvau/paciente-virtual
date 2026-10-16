@@ -4,7 +4,7 @@ import { error, verificarAcceso } from "./_lib.js";
 const PISTA = "Consulta de salud sexual y reproductiva en Chile. Matrona, pololo, flujo, regla, condón, anticonceptivo, ITS, VIH, PAP, examen.";
 
 export async function POST(request) {
-  const denegado = verificarAcceso(request);
+  const denegado = await verificarAcceso(request);
   if (denegado) return denegado;
   if (!process.env.OPENAI_API_KEY) return error(500, "Falta configurar OPENAI_API_KEY en Vercel.");
 

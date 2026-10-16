@@ -61,6 +61,10 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 #estadoGuardado { color: var(--muted); }
 #estadoGuardado.ok { color: var(--ok); font-weight: 700; }
 #estadoGuardado.err { color: var(--rec); font-weight: 700; }
+.actividades { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.actividad { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(210px, 1.4fr) auto auto auto; gap: 10px 14px; align-items: center; }
+.actividad .cod { font: 700 1.05rem/1.2 var(--display); }
+@media (max-width: 760px) { .actividad { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .lista { position: static; } }
 </style>
 </head>
@@ -84,8 +88,25 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
     <nav class="lista" aria-label="Personajes">
       <div id="lista" style="display:flex;flex-direction:column;gap:6px"></div>
       <button type="button" id="btnNuevo">+ Nuevo personaje</button>
+      <button type="button" id="btnActividades" class="item" style="margin-top:12px"><b>Actividades y guía</b><small>Códigos para tus clases</small></button>
       <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
     </nav>
+
+    <section id="vistaActividades" class="actividades" hidden aria-labelledby="tituloAct">
+      <div class="caja" style="display:flex;flex-direction:column;gap:8px">
+        <h2 id="tituloAct">Actividades y guía de la entrevista</h2>
+        <p>Crea un código para cada clase o evaluación y decide si los estudiantes ven la guía de los tres momentos (inicio, exploración y cierre).</p>
+        <p class="ayuda">El código general de siempre sigue funcionando para practicar fuera del aula: con ese código, cada estudiante elige si usa la guía.</p>
+      </div>
+      <form id="formActividad" class="caja" autocomplete="off" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px 16px;align-items:end">
+        <div class="campo"><label for="a_nombre">Nombre de la actividad</label><input type="text" id="a_nombre" placeholder="ej. Taller anamnesis, sección 2"></div>
+        <div class="campo"><label for="a_codigo">Código para los estudiantes</label><input type="text" id="a_codigo" placeholder="ej. taller-2"></div>
+        <div class="campo"><label for="a_guia">Guía de la entrevista</label><select id="a_guia"><option value="con">Siempre visible</option><option value="sin">Oculta (evaluación)</option><option value="libre">La elige cada estudiante</option></select></div>
+        <div class="campo"><button class="primario" type="submit">Crear actividad</button></div>
+      </form>
+      <div id="listaActividades" style="display:flex;flex-direction:column;gap:10px"></div>
+      <p id="estadoAct" role="status" class="ayuda"></p>
+    </section>
 
     <form id="editor" autocomplete="off">
       <fieldset>
@@ -199,6 +220,7 @@ function pintarLista() {
 }
 
 function abrir(c) {
+  $("editor").hidden = false; $("vistaActividades").hidden = true; $("btnActividades").setAttribute("aria-current", "false");
   nuevo = !c; actual = c || null; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
   $("f_id").value = c ? c.id : ""; $("f_id").disabled = Boolean(c);
   for (const k of CAMPOS) {
@@ -262,6 +284,67 @@ $("btnProbar").onclick = async () => {
   } catch (e) { $("estadoVoz").textContent = e.message; }
   finally { $("btnProbar").disabled = false; }
 };
+
+/* Actividades: códigos de clase con su regla para la guía */
+const GUIA_TXT = { con: "Siempre visible", sin: "Oculta (evaluación)", libre: "La elige cada estudiante" };
+let actividades = [];
+$("btnActividades").onclick = async () => {
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Ir a actividades igual?")) return;
+  cambios = false; actual = null; nuevo = false; pintarLista();
+  $("editor").hidden = true; $("vistaActividades").hidden = false; $("btnActividades").setAttribute("aria-current", "true");
+  if (!$("a_codigo").value) $("a_codigo").value = "box-" + Math.floor(1000 + Math.random() * 9000);
+  await cargarActividades();
+};
+async function cargarActividades() {
+  $("estadoAct").textContent = "Cargando…";
+  try {
+    const d = await (await api("/api/docente?actividades=1")).json();
+    actividades = d.actividades || [];
+    $("estadoAct").textContent = d.editable ? (actividades.length ? "" : "Todavía no hay actividades.") : "Para crear actividades falta configurar Supabase en Vercel.";
+    pintarActividades();
+  } catch (e) { $("estadoAct").textContent = e.message; }
+}
+function pintarActividades() {
+  const cont = $("listaActividades"); cont.textContent = "";
+  for (const a of actividades) {
+    const fila = document.createElement("div"); fila.className = "caja actividad";
+    const info = document.createElement("div");
+    const cod = document.createElement("div"); cod.className = "cod"; cod.textContent = a.codigo;
+    const nom = document.createElement("div"); nom.className = "ayuda"; nom.textContent = a.nombre || "Sin nombre";
+    info.append(cod, nom);
+    const sel = document.createElement("select"); sel.setAttribute("aria-label", "Guía en " + a.codigo);
+    for (const [v, t] of Object.entries(GUIA_TXT)) { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.append(o); }
+    sel.value = a.guia;
+    const act = document.createElement("label"); act.className = "check";
+    const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = a.activa; act.append(chk, " Código activo");
+    const bG = document.createElement("button"); bG.type = "button"; bG.textContent = "Guardar";
+    const bB = document.createElement("button"); bB.type = "button"; bB.textContent = "Borrar";
+    bG.onclick = () => guardarActividad({ codigo: a.codigo, nombre: a.nombre, guia: sel.value, activa: chk.checked });
+    bB.onclick = async () => {
+      if (!confirm(`¿Borrar la actividad «${a.codigo}»? Los estudiantes ya no podrán entrar con ese código.`)) return;
+      try { await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "borrarActividad", codigo: a.codigo }) }); await cargarActividades(); }
+      catch (e) { $("estadoAct").textContent = e.message; }
+    };
+    fila.append(info, sel, act, bG, bB); cont.append(fila);
+  }
+}
+async function guardarActividad(datos) {
+  $("estadoAct").textContent = "Guardando…";
+  try {
+    await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "actividad", ...datos }) });
+    await cargarActividades();
+    $("estadoAct").textContent = "Guardado. Los cambios llegan a los estudiantes en menos de un minuto.";
+    return true;
+  } catch (e) { $("estadoAct").textContent = e.message; return false; }
+}
+$("formActividad").addEventListener("submit", async e => {
+  e.preventDefault();
+  const codigo = $("a_codigo").value.trim().toLowerCase();
+  if (actividades.some(a => a.codigo === codigo) && !confirm("Ya existe una actividad con ese código. ¿Reemplazarla?")) return;
+  if (await guardarActividad({ codigo, nombre: $("a_nombre").value.trim(), guia: $("a_guia").value, activa: true })) {
+    $("a_nombre").value = ""; $("a_codigo").value = "box-" + Math.floor(1000 + Math.random() * 9000);
+  }
+});
 
 /* Guardar */
 $("editor").addEventListener("submit", async e => {

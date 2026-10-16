@@ -1,7 +1,7 @@
 // Página de docente: ver y editar personajes, listar voces de ElevenLabs y probarlas.
 // Protegida con DOCENTE_CODE (distinto del código de los estudiantes).
 import { error } from "./_lib.js";
-import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS } from "./_datos.js";
+import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS } from "./_datos.js";
 import { sintetizar } from "./hablar.js";
 
 function verificarDocente(request) {
@@ -29,6 +29,7 @@ export async function GET(request) {
   try {
     const q = new URL(request.url).searchParams;
     if (q.get("voces")) return Response.json({ voces: await vocesElevenLabs() });
+    if (q.get("actividades")) return Response.json({ actividades: await listarActividades(), editable: supabaseConfigurado });
     return Response.json({ casos: await listarCasos({ incluirInactivos: true }), editable: supabaseConfigurado });
   } catch (e) { return error(502, e.message); }
 }
@@ -61,6 +62,20 @@ export async function POST(request) {
   if (body.accion === "probar") {
     const texto = String(body.texto || "Hola, buenas tardes. Vengo a la consulta.").slice(0, 300);
     return sintetizar(texto, body.caso, body.voz_id);
+  }
+
+  if (body.accion === "actividad") {
+    const codigo = normalizarCodigo(body.codigo);
+    if (!/^[a-z0-9-]{4,40}$/.test(codigo)) return error(400, "El código debe tener entre 4 y 40 caracteres: letras minúsculas sin tildes, números o guiones.");
+    const reservados = [process.env.ACCESS_CODE, process.env.DOCENTE_CODE].map(normalizarCodigo);
+    if (reservados.includes(codigo)) return error(400, "Ese código ya se usa como código general o de docente. Elige otro.");
+    const guia = GUIAS.includes(body.guia) ? body.guia : "libre";
+    try {
+      return Response.json({ actividad: await guardarActividad({ codigo, nombre: String(body.nombre || "").slice(0, 120), guia, activa: body.activa !== false }) });
+    } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "borrarActividad") {
+    try { await borrarActividad(body.codigo); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
   }
 
   const id = String(body.id || "").trim().toLowerCase();

@@ -105,3 +105,31 @@ export function guionCompleto(c) {
   ];
   return capas.filter(([, t]) => t && t.trim()).map(([n, t]) => `${n}\n${t.trim()}`).join("\n\n") + cierre;
 }
+
+// Actividades: códigos que la docente crea para una clase, cada uno con su regla para la guía de la entrevista.
+// guia: "libre" (cada estudiante decide), "con" (siempre visible) o "sin" (oculta, por ejemplo en una evaluación).
+export const GUIAS = ["libre", "con", "sin"];
+let cacheAct = null, horaAct = 0;
+export function normalizarCodigo(c) { return String(c || "").trim().toLowerCase(); }
+export async function listarActividades() {
+  if (!supabaseConfigurado) return [];
+  return pedirSupabase("actividades?select=*&order=creado.desc");
+}
+export async function buscarActividad(codigo) {
+  codigo = normalizarCodigo(codigo);
+  if (!codigo || !supabaseConfigurado) return null;
+  if (!cacheAct || Date.now() - horaAct > 30_000) { cacheAct = await listarActividades(); horaAct = Date.now(); }
+  return cacheAct.find(a => a.activa && a.codigo === codigo) || null;
+}
+export async function guardarActividad(a) {
+  if (!supabaseConfigurado) throw new Error("Para crear actividades falta configurar Supabase en Vercel.");
+  const r = await pedirSupabase("actividades?on_conflict=codigo", {
+    method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify(a),
+  });
+  cacheAct = null;
+  return Array.isArray(r) ? r[0] : r;
+}
+export async function borrarActividad(codigo) {
+  await pedirSupabase("actividades?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "DELETE" });
+  cacheAct = null;
+}
