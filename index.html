@@ -308,11 +308,12 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         </dl>
       </section>
 
-      <section class="log" id="log" aria-live="polite" aria-label="Entrevista">
+      <section class="log" id="log" aria-label="Entrevista">
         <div class="vacio" id="vacio">Toca «Iniciar conversación», saluda y preséntate. Después conversa con naturalidad: cuando dejas de hablar, tu intervención se envía sola y, cuando la paciente termina de responder, el micrófono vuelve a escucharte. Recuerda los tres momentos: inicio, exploración y cierre.</div>
       </section>
 
       <div id="aviso" class="aviso" role="status" hidden></div>
+      <div id="anuncio" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
 
       <div id="sugerenciaCierre" class="sugerencia" role="status" hidden>
         <span>Parece que cerraste la entrevista. ¿Quieres ver cómo te fue?</span>
@@ -504,6 +505,7 @@ async function enviar(texto) {
     if (/json/.test(r.headers.get("content-type") || "")) bruto = (await r.json()).texto || "";
     else {
       const lector = r.body.getReader(), dec = new TextDecoder();
+    b.setAttribute("aria-busy", "true");
       while (true) {
         const { value, done } = await lector.read();
         if (done) break;
@@ -512,10 +514,12 @@ async function enviar(texto) {
         if (voz && !leidoHasta) { const corte = primerCorte(bruto); if (corte) { voz.agregar(bruto.slice(0, corte)); leidoHasta = corte; } }
       }
     }
+    b.removeAttribute("aria-busy");
     const resp = bruto.trim();
     if (!resp) throw new Error("La paciente no alcanzó a responder. Vuelve a intentarlo.");
     if (voz) { voz.agregar(bruto.slice(leidoHasta)); voz.cerrar(); }
     b.classList.remove("espera"); b.textContent = resp;
+    if (!voz) anunciar(nombrePaciente() + ": " + resp);
     turnos.push({ role: "assistant", content: resp });
     const seDespide = DESPEDIDA.test(texto) && turnos.filter(t => t.role === "user").length >= 3;
     if (seDespide) { $("sugerenciaCierre").hidden = false; mostrarAlFinal($("sugerenciaCierre")); pausarConversacion(); }
@@ -634,7 +638,22 @@ let modoConversacion = false, seOyoVoz = false, pausaPorSilencio = false;
 
 function nombrePaciente() { return casoActual ? casoActual.nombre.split(" ")[0] : "La paciente"; }
 const BARRAS = '<span class="barras" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+// Avisos para lectores de pantalla: lo que se ve en el botón del micrófono y las respuestas escritas.
+let ultimaFase = "";
+function anunciar(t) {
+  const a = $("anuncio"); a.textContent = "";
+  setTimeout(() => { a.textContent = t; }, 60);
+}
+function anunciarFase(fase) {
+  if (fase === ultimaFase) return;
+  const antes = ultimaFase; ultimaFase = fase;
+  if (fase === "escuchando") anunciar("Te escucho.");
+  else if (fase === "transcribiendo") anunciar("Pensando.");
+  else if (fase === "hablando") anunciar(nombrePaciente() + " está respondiendo.");
+  else if (antes === "escuchando" && !modoConversacion) anunciar("Conversación en pausa.");
+}
 function pintarMic(fase) {
+  anunciarFase(fase || "inactivo");
   const b = $("btnMic");
   b.classList.toggle("grabando", fase === "escuchando");
   b.classList.toggle("hablando", fase === "hablando");
