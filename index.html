@@ -65,13 +65,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .nota { color: var(--muted); font-size: .88rem; }
 .nota a { color: var(--accent); font-weight: 700; }
 
-.compositor { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 8px; }
-.compositor .fila { flex-wrap: nowrap; align-items: flex-end; }
 #msg { flex: 1; min-width: 0; min-height: 48px; max-height: 160px; resize: none; font: 1rem/1.45 var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
-#btnMic { width: 100%; padding: 16px; font-size: 1.05rem; background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-#btnMic.grabando { background: var(--rec); border-color: var(--rec); }
-#btnMic.hablando { background: var(--soft); color: var(--accent); border-color: var(--soft); }
-#btnMic { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .barras { display: inline-flex; align-items: center; gap: 3px; height: 22px; }
 .barras i { width: 4px; height: 4px; border-radius: 2px; background: currentColor; transition: height .08s linear; }
 
@@ -142,29 +136,11 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   @keyframes pensar { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-5deg) translateY(-2px); } }
 }
 
-/* Diseño B: barra de íconos a la izquierda */
-.layout { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 20px; align-items: start; }
-.layout[hidden] { display: none !important; }
-.principal { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.riel { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 6px; }
-.riel button { display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--ink); padding: 10px 4px; font-size: .72rem; line-height: 1.2; border-radius: 8px; text-align: center; }
-.riel button:hover:not(:disabled) { background: var(--soft); }
-.riel button.destacado { background: var(--accent); color: var(--on-accent); }
-.riel button.destacado:hover:not(:disabled) { background: var(--accent); filter: brightness(1.1); }
-.riel #btnVoz[aria-pressed="true"] { background: var(--soft); color: var(--accent); }
-.riel .salir { color: var(--muted); }
-.riel .sep { flex: 1; min-height: 24px; }
 .ico svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; fill: none; display: block; }
 .ico svg .relleno { fill: currentColor; stroke: none; }
 #btnVoz .tachado { display: none; }
 #btnVoz[aria-pressed="false"] .tachado { display: inline; }
 #btnVoz[aria-pressed="false"] .ondas { display: none; }
-@media (max-width: 640px) {
-  .layout { grid-template-columns: 1fr; gap: 12px; }
-  .riel { position: static; flex-direction: row; overflow-x: auto; padding: 6px; }
-  .riel button { flex: 1 1 0; min-width: 0; padding: 8px 2px; font-size: .68rem; }
-  .riel .sep { display: none; }
-}
 /* Color con sentido: cada paciente tiene su tono y cada tarea CICAA el suyo */
 :root {
   --t0: #B83A6B; --t0s: #FBE7EF; --t1: #2F64B0; --t1s: #E4EDFA; --t2: #9A5B0C; --t2s: #FBEEDB; --t3: #6E4BB0; --t3s: #EEE8FA;
@@ -189,12 +165,8 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .tarjeta .cabeza .edad { margin-left: auto; }
 .tarjeta .foco { color: var(--tono); font-weight: 700; }
 .tarjeta:hover { border-color: color-mix(in srgb, var(--tono) 45%, var(--line)); border-top-color: var(--tono); }
-.ficha.paciente { border-left: 5px solid var(--tono); }
-.ficha.paciente .ficha-head { background: var(--tono-suave); border-radius: 0 6px 0 0; }
-.ficha.paciente #fNombre { color: var(--tono); }
 .turno.ella .label { color: var(--tono); font-weight: 700; }
 .turno.ella .burbuja { border-color: color-mix(in srgb, var(--tono) 30%, var(--line)); }
-#btnMic.hablando { background: var(--tono-suave); color: var(--tono); border-color: color-mix(in srgb, var(--tono) 35%, transparent); }
 .nivel { border: 0; }
 .nivel-basico { color: var(--accent); background: var(--ok-bg); }
 .nivel-intermedio { color: var(--warn); background: var(--parte-bg); }
@@ -212,16 +184,12 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .inicio .mascota { max-width: 260px; }
 .inicio header { gap: 8px; margin-bottom: 4px; }
 .inicio h1 { font-size: clamp(1.7rem, 1.2rem + 1.8vw, 2.3rem); line-height: 1.1; }
-.layout { grid-template-columns: 88px minmax(0, 800px); justify-content: center; }
 .seleccion { padding-bottom: 32px; }
 .tarjeta .edad { white-space: nowrap; }
 .resumen div { white-space: nowrap; }
 .ficha dl.resumen { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin-top: 10px; }
 #feedback { padding: 6px 18px 16px 32px; }
 #feedback .tarea { margin-left: -16px; }
-@media (max-width: 640px) {
-  .layout { grid-template-columns: 1fr; }
-}
 @media (max-width: 560px) {
   .inicio { grid-template-columns: 1fr; min-height: 0; align-content: start; gap: 14px; padding-top: 8px; }
   .inicio .bienvenida { display: contents; }
@@ -232,7 +200,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 /* Pequeños detalles: el micrófono "respira" mientras escucha y la paciente muestra ondas mientras habla */
 @media (prefers-reduced-motion: no-preference) {
   #btnMic.grabando { animation: escucha 1.8s ease-in-out infinite; }
-  @keyframes escucha { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rec) 35%, transparent); } 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--rec) 0%, transparent); } }
+  @keyframes escucha { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rec) 35%, transparent); } 50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--rec) 0%, transparent); } }
   .ondas-auto i { animation: onda 0.9s ease-in-out infinite; }
   .ondas-auto i:nth-child(2) { animation-delay: .15s; } .ondas-auto i:nth-child(3) { animation-delay: .3s; }
   .ondas-auto i:nth-child(4) { animation-delay: .45s; } .ondas-auto i:nth-child(5) { animation-delay: .6s; }
@@ -241,8 +209,95 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   @keyframes celebra { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-10px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
 }
 .ondas-auto i { height: 10px; }
-@media (max-width: 640px) { .riel #btnFeedback { flex-grow: 1.5; } }
 @media (max-width: 560px) { .cierre > div { display: contents; } .cierre .resumen { grid-column: 1 / -1; margin: 0; } }
+/* Sala de entrevista (diseño B): ficha a la izquierda, paciente al centro, transcripción a la derecha */
+.wrap { max-width: 1320px; }
+.seleccion { max-width: 1040px; width: 100%; margin-inline: auto; }
+.sala { display: grid; grid-template-columns: 270px minmax(0, 1fr) 320px; gap: 20px; height: calc(100svh - 40px); min-height: 600px; padding-bottom: 20px; }
+.sala[hidden] { display: none !important; }
+.lado { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
+.lado > .caja { flex: none; }
+.caja { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.caja-tit { font: 700 .95rem/1.2 var(--display); margin: 0; color: var(--muted); }
+.ficha-nombre { font: 700 1.3rem/1.15 var(--display); color: var(--tono); }
+.ficha-sub { color: var(--muted); }
+.ficha-datos { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.ficha-datos dt { font-size: .85rem; color: var(--muted); }
+.ficha-datos dd { margin: 0; }
+.tiempo { flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tiempo #reloj { font: 700 1.6rem/1 var(--display); }
+.tiempo .t-sub { color: var(--muted); }
+.acciones { order: -1; flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.acciones button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border-radius: 10px; font-size: .8rem; padding: 6px 2px; }
+.acciones .ico svg { width: 18px; height: 18px; }
+.acciones #btnSalir { color: var(--muted); }
+#btnVoz[aria-pressed="true"] { background: var(--soft); color: var(--accent); border-color: transparent; }
+
+.escenario-col { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+.escenario { flex: 1; background: var(--tono-suave); border-radius: 24px; padding: 32px 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.avatar { width: 220px; height: 220px; flex: none; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--tono) 9%, transparent); }
+.avatar .aro { width: 82%; height: 82%; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--tono) 16%, transparent); }
+.avatar .cara { width: 78%; height: 78%; border-radius: 50%; display: grid; place-items: center; background: var(--tono); color: var(--surface); font: 700 4rem/1 var(--display); }
+#ondas { height: 26px; color: var(--tono); gap: 4px; }
+#ondas i { width: 5px; }
+.escenario:not(.escuchando) #ondas:not(.ondas-auto) { visibility: hidden; }
+.escenario.escuchando #ondas { color: var(--rec); }
+#estadoTitulo { font: 700 1.6rem/1.2 var(--display); }
+.escenario .ayuda { color: var(--muted); max-width: 46ch; }
+.subtitulo { font-size: 1.3rem; line-height: 1.45; max-width: 34ch; text-wrap: pretty; }
+.controles { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+.pildora { min-height: 52px; padding: 0 22px; border-radius: 26px; }
+.pildora.oscura { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+#btnEscribir[aria-expanded="true"] { background: var(--soft); color: var(--accent); border-color: var(--accent); }
+#btnMic { width: 84px; height: 84px; flex: none; border-radius: 50%; padding: 0; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border: 0; }
+#btnMic svg { width: 34px; height: 34px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+#btnMic.grabando { background: var(--rec); }
+#btnMic.hablando { background: var(--surface); color: var(--tono); box-shadow: inset 0 0 0 2px var(--tono); }
+.escenario .compositor { width: 100%; max-width: 560px; display: flex; gap: 8px; align-items: flex-end; }
+.escenario .aviso, .escenario .sugerencia { width: 100%; max-width: 560px; text-align: left; }
+#secFeedback { border-radius: 16px; }
+.fb-acciones { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 14px 16px; }
+
+.transcripcion { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.transcripcion .cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px 8px 18px; border-bottom: 1px solid var(--line); }
+.transcripcion h2 { font: 700 1.05rem/1.2 var(--display); margin: 0; }
+#btnCopiar { border: 0; background: transparent; color: var(--accent); display: flex; gap: 6px; align-items: center; min-height: 44px; }
+#btnCopiar .ico svg { width: 18px; height: 18px; }
+.transcripcion .log { flex: 1; overflow-y: auto; padding: 14px; min-height: 0; }
+.transcripcion .turno { max-width: 92%; }
+
+/* Modo práctica: guía de los tres momentos */
+.interruptor { display: flex; gap: 10px; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; }
+.interruptor input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; margin: 0; }
+.guia { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.momento { display: flex; gap: 10px; align-items: flex-start; border-radius: 10px; padding: 8px; }
+.momento .num { width: 26px; height: 26px; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .85rem; border: 2px solid var(--line); color: var(--muted); }
+.momento.actual { background: var(--soft); }
+.momento.actual .num { border-color: var(--accent); color: var(--accent); }
+.momento.hecho .num { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.momento b { display: block; }
+.momento ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: .92rem; color: var(--muted); }
+.momento ul li { display: flex; gap: 6px; align-items: baseline; }
+.momento ul li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; transform: translateY(1px); }
+.momento ul li.hecho { color: var(--ink); }
+.momento ul li.hecho::before { background: var(--accent); border-color: var(--accent); }
+.momento .consejo { font-size: .88rem; color: var(--muted); margin-top: 4px; }
+
+@media (max-width: 999px) {
+  .sala { display: flex; flex-direction: column; height: auto; min-height: 0; gap: 12px; }
+  .lado { display: contents; }
+  .acciones { order: 0; }
+  #fichaPaciente { order: 1; }
+  .tiempo { order: 2; padding: 10px 18px; }
+  .escenario-col { order: 3; overflow: visible; }
+  .escenario { padding: 24px 16px; }
+  .avatar { width: 150px; height: 150px; }
+  .avatar .cara { font-size: 2.8rem; }
+  #estadoTitulo { font-size: 1.35rem; }
+  .subtitulo { font-size: 1.15rem; }
+  .guia-caja { order: 4; }
+  .transcripcion { order: 5; max-height: 70svh; }
+}
 </style>
 </head>
 <body>
@@ -282,43 +337,65 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
     <div class="tarjetas" id="tarjetas"></div>
   </section>
 
-  <div id="app" class="layout" hidden>
-    <nav class="riel" aria-label="Acciones de la entrevista">
-      <button id="btnFeedback" type="button" class="destacado" title="Terminar y pedir retroalimentación"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path class="relleno" d="M9 4h6v3H9z"/><path d="M8.5 13l2.5 2.5 4.5-5"/></svg></span><span class="txt">Retro­alimentación</span></button>
-      <button id="btnVoz" type="button" aria-pressed="true" title="Voz de la paciente"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="relleno" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="ondas" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="tachado" d="M16 9l6 6M22 9l-6 6"/></svg></span><span class="txt">Voz</span></button>
-      <button id="btnCopiar" type="button" class="" title="Copiar transcripción"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg></span><span class="txt">Copiar</span></button>
-      <button id="btnPacientes" type="button" class="" title="Elegir otra paciente"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/></svg></span><span class="txt">Pacientes</span></button>
-      <button id="btnNueva" type="button" class="" title="Nueva entrevista"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></span><span class="txt">Nueva</span></button>
-      <div class="sep" aria-hidden="true"></div>
-      <button id="btnSalir" type="button" class="salir" title="Salir y borrar el código guardado"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg></span><span class="txt">Salir</span></button>
-    </nav>
-
-    <div class="principal">
-      <section class="ficha paciente" id="fichaPaciente" aria-label="Ficha de ingreso">
-        <div class="ficha-head">
-          <span class="label">Ficha de ingreso · Caso simulado</span>
-          <span class="label">Entrevista <span id="reloj">00:00</span> · <span id="cuenta">0</span> intervenciones</span>
+  <div id="app" class="sala" hidden>
+    <aside class="lado" aria-label="Ficha y opciones">
+      <section class="caja" id="fichaPaciente" aria-label="Ficha de ingreso">
+        <h2 class="caja-tit">Ficha de ingreso</h2>
+        <div>
+          <p class="ficha-nombre" id="fNombre">—</p>
+          <p class="ficha-sub"><span id="fEdad">—</span> · RUT <span id="fRut">—</span></p>
         </div>
-        <dl>
-          <div><dt class="label">Nombre</dt><dd id="fNombre">—</dd></div>
-          <div><dt class="label">Edad</dt><dd id="fEdad">—</dd></div>
-          <div><dt class="label">RUT</dt><dd id="fRut">—</dd></div>
-          <div><dt class="label">Atención</dt><dd id="fAtencion">—</dd></div>
-          <div class="wide"><dt class="label">Motivo de consulta registrado en admisión</dt><dd id="fMotivo">—</dd></div>
+        <dl class="ficha-datos">
+          <div><dt>Atención</dt><dd id="fAtencion">—</dd></div>
+          <div><dt>Motivo registrado en admisión</dt><dd id="fMotivo">—</dd></div>
         </dl>
       </section>
-
-      <section class="log" id="log" aria-label="Entrevista">
-        <div class="vacio" id="vacio">Toca «Iniciar conversación», saluda y preséntate. Después conversa con naturalidad: cuando dejas de hablar, tu intervención se envía sola y, cuando la paciente termina de responder, el micrófono vuelve a escucharte. Recuerda los tres momentos: inicio, exploración y cierre.</div>
+      <section class="caja tiempo" aria-label="Tiempo de entrevista">
+        <span id="reloj">00:00</span><span class="t-sub"><span id="cuenta">0</span> intervenciones</span>
       </section>
+      <section class="caja guia-caja" aria-label="Modo práctica">
+        <label class="interruptor"><input type="checkbox" id="chkGuia"> Modo práctica: guía de la entrevista</label>
+        <ol class="guia" id="guia" hidden>
+          <li class="momento" data-momento="1"><span class="num" aria-hidden="true">1</span><div><b>Inicio</b>
+            <ul><li data-item="saludo">Saluda</li><li data-item="presentacion">Preséntate con tu nombre y rol</li><li data-item="confidencialidad">Habla de confidencialidad</li></ul></div></li>
+          <li class="momento" data-momento="2"><span class="num" aria-hidden="true">2</span><div><b>Exploración</b>
+            <ul><li data-item="abierta">Parte con una pregunta abierta</li><li data-item="sentir">Pregunta qué siente o qué le preocupa</li></ul>
+            <p class="consejo">Lo importante no siempre se cuenta a la primera: precisa y vuelve a preguntar.</p></div></li>
+          <li class="momento" data-momento="3"><span class="num" aria-hidden="true">3</span><div><b>Cierre</b>
+            <ul><li data-item="resumen">Resume lo conversado</li><li data-item="algomas">Pregunta si hay algo más que le preocupe</li><li data-item="pasos">Acuerda los próximos pasos</li></ul></div></li>
+        </ol>
+      </section>
+      <nav class="acciones" aria-label="Otras acciones">
+        <button id="btnVoz" type="button" aria-pressed="true" title="Voz de la paciente"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="relleno" d="M4 9v6h4l5 4V5L8 9H4z"/><path class="ondas" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="tachado" d="M16 9l6 6M22 9l-6 6"/></svg></span><span class="txt">Voz</span></button>
+        <button id="btnPacientes" type="button" title="Elegir otra paciente"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 18.5"/></svg></span><span class="txt">Pacientes</span></button>
+        <button id="btnNueva" type="button" title="Nueva entrevista"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></span><span class="txt">Nueva</span></button>
+        <button id="btnSalir" type="button" title="Salir"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg></span><span class="txt">Salir</span></button>
+      </nav>
+    </aside>
 
-      <div id="aviso" class="aviso" role="status" hidden></div>
+    <main class="escenario-col">
+      <section class="escenario" id="escenario" aria-label="Paciente">
+        <div class="avatar" aria-hidden="true"><div class="aro"><div class="cara" id="inicialAvatar">·</div></div></div>
+        <span class="barras" id="ondas" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <h1 id="estadoTitulo">La paciente te espera</h1>
+        <p class="ayuda" id="estadoAyuda">Toca el micrófono, saluda y preséntate.</p>
+        <p class="subtitulo" id="subtitulo" hidden></p>
+        <div class="controles">
+          <button id="btnEscribir" type="button" class="pildora" aria-expanded="false" aria-controls="form">Escribir</button>
+          <button id="btnMic" type="button" aria-label="Iniciar conversación" title="Iniciar conversación"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+          <button id="btnFeedback" type="button" class="pildora oscura">Terminar y ver retroalimentación</button>
+        </div>
+        <form class="compositor" id="form" hidden>
+          <textarea id="msg" rows="1" placeholder="Escribe tu intervención" aria-label="Tu intervención"></textarea>
+          <button id="btnEnviar" type="submit">Enviar</button>
+        </form>
+        <div id="aviso" class="aviso" role="status" hidden></div>
+        <div id="sugerenciaCierre" class="sugerencia" role="status" hidden>
+          <span>Parece que cerraste la entrevista. ¿Quieres ver cómo te fue?</span>
+          <button type="button" class="primario" id="btnSugerenciaFeedback">Pedir retroalimentación</button>
+        </div>
+      </section>
       <div id="anuncio" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
-
-      <div id="sugerenciaCierre" class="sugerencia" role="status" hidden>
-        <span>Parece que cerraste la entrevista. ¿Quieres ver cómo te fue?</span>
-        <button type="button" class="primario" id="btnSugerenciaFeedback">Pedir retroalimentación</button>
-      </div>
 
       <section id="secFeedback" class="ficha" hidden>
         <div class="ficha-head"><span class="label">Retroalimentación orientativa · Tareas CICAA</span></div>
@@ -336,16 +413,22 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         </div>
         <div id="feedback"></div>
         <p class="nota" style="padding:0 14px 14px">Generada por IA a partir de la transcripción. Sirve para conversar en el debriefing; no reemplaza la rúbrica ni el juicio docente.</p>
-      </section>
-
-      <form class="compositor" id="form">
-        <button id="btnMic" type="button">Iniciar conversación</button>
-        <div class="fila">
-          <textarea id="msg" rows="1" placeholder="O escribe tu intervención" aria-label="Tu intervención"></textarea>
-          <button id="btnEnviar" type="submit">Enviar</button>
+        <div class="fb-acciones">
+          <button type="button" class="primario" id="btnNuevaFb">Nueva entrevista</button>
+          <button type="button" id="btnPacientesFb">Elegir otra paciente</button>
         </div>
-      </form>
-    </div>
+      </section>
+    </main>
+
+    <aside class="transcripcion" aria-label="Transcripción">
+      <div class="cab">
+        <h2>Transcripción</h2>
+        <button id="btnCopiar" type="button" title="Copiar transcripción"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"/></svg></span><span class="txt">Copiar</span></button>
+      </div>
+      <section class="log" id="log" aria-label="Entrevista">
+        <div class="vacio" id="vacio">Aquí quedará escrita la conversación.</div>
+      </section>
+    </aside>
   </div>
 </div>
 
@@ -408,9 +491,8 @@ function elegirCaso(c) {
   casoActual = c; guardar("caso", c.id);
   // Despierta las funciones del servidor mientras la estudiante lee la ficha, para que el primer turno no espere el arranque.
   for (const ruta of ["/api/chat", "/api/transcribir", "/api/hablar"]) fetch(ruta + "?c=" + encodeURIComponent(codigo)).catch(() => {});
-  $("app").className = "layout " + (c.tono || "");
-  const el = c.sexo === "masculino", nombre = c.nombre.split(" ")[0];
-  $("vacio").textContent = `${nombre} ya está ${el ? "sentado" : "sentada"} en el box, esperándote. Toca «Iniciar conversación», saluda y preséntate. Cuando dejas de hablar, tu intervención se envía sola, y cuando ${el ? "él" : "ella"} termina de responder, el micrófono vuelve a escucharte. Recuerda los tres momentos: inicio, exploración y cierre.`;
+  $("app").className = "sala " + (c.tono || "");
+  $("inicialAvatar").textContent = c.nombre.trim().charAt(0);
   $("fNombre").textContent = c.nombre; $("fEdad").textContent = c.edad; $("fRut").textContent = c.rut || "—";
   $("fAtencion").textContent = c.atencion; $("fMotivo").textContent = c.motivo;
   $("btnNueva").onclick();
@@ -454,13 +536,17 @@ function burbuja(quien, texto) {
   t.append(n, b); log.append(t); mostrarAlFinal(t);
   return b;
 }
-// Deja visible el último mensaje, por encima del cuadro para hablar o escribir.
+// Deja visible lo último: la transcripción baja sola; lo demás se acerca sin saltos.
 function mostrarAlFinal(el) {
   requestAnimationFrame(() => {
-    const abajo = el.getBoundingClientRect().bottom;
-    const limite = $("form").getBoundingClientRect().top - 16;
-    if (abajo > limite) window.scrollBy({ top: abajo - limite });
+    if (log.contains(el)) log.scrollTop = log.scrollHeight;
+    else el.scrollIntoView({ block: "nearest" });
   });
+}
+// La última frase de la paciente se ve grande al centro, como subtítulo.
+function mostrarSubtitulo(t) {
+  const s = $("subtitulo"); t = (t || "").trim();
+  s.hidden = !t; s.textContent = t ? "«" + t + "»" : "";
 }
 function contar() { $("cuenta").textContent = turnos.filter(t => t.role === "user").length; }
 setInterval(() => {
@@ -489,7 +575,7 @@ async function enviar(texto) {
   if (!texto || ocupado) return;
   mostrarAviso(""); callarPaciente();
   if (!inicio) inicio = Date.now();
-  turnos.push({ role: "user", content: texto }); contar();
+  turnos.push({ role: "user", content: texto }); contar(); actualizarGuia();
   const mia = burbuja("yo", texto);
   const b = burbuja("ella", ""); b.classList.add("espera");
   b.innerHTML = '<span class="puntos" aria-hidden="true"><i></i><i></i><i></i></span><span class="sr">Respondiendo…</span>';
@@ -510,7 +596,7 @@ async function enviar(texto) {
         const { value, done } = await lector.read();
         if (done) break;
         bruto += dec.decode(value, { stream: true });
-        if (bruto.trim()) { b.classList.remove("espera"); b.textContent = bruto.trimStart(); mostrarAlFinal(b.parentElement); }
+        if (bruto.trim()) { b.classList.remove("espera"); b.textContent = bruto.trimStart(); mostrarSubtitulo(bruto); mostrarAlFinal(b.parentElement); }
         if (voz && !leidoHasta) { const corte = primerCorte(bruto); if (corte) { voz.agregar(bruto.slice(0, corte)); leidoHasta = corte; } }
       }
     }
@@ -518,7 +604,7 @@ async function enviar(texto) {
     const resp = bruto.trim();
     if (!resp) throw new Error("La paciente no alcanzó a responder. Vuelve a intentarlo.");
     if (voz) { voz.agregar(bruto.slice(leidoHasta)); voz.cerrar(); }
-    b.classList.remove("espera"); b.textContent = resp;
+    b.classList.remove("espera"); b.textContent = resp; mostrarSubtitulo(resp);
     if (!voz) anunciar(nombrePaciente() + ": " + resp);
     turnos.push({ role: "assistant", content: resp });
     const seDespide = DESPEDIDA.test(texto) && turnos.filter(t => t.role === "user").length >= 3;
@@ -533,7 +619,7 @@ async function enviar(texto) {
     }
   } catch (e) {
     callarPaciente();
-    turnos.pop(); contar(); b.parentElement.remove(); mia.parentElement.remove();
+    turnos.pop(); contar(); actualizarGuia(); b.parentElement.remove(); mia.parentElement.remove();
     $("vacio").hidden = turnos.length > 0;
     msg.value = texto; ajustar();
     mostrarAviso(e.message);
@@ -637,7 +723,6 @@ const ESPERA_SIN_VOZ_MS = 15000;  // si nadie habla en este tiempo, la conversac
 let modoConversacion = false, seOyoVoz = false, pausaPorSilencio = false;
 
 function nombrePaciente() { return casoActual ? casoActual.nombre.split(" ")[0] : "La paciente"; }
-const BARRAS = '<span class="barras" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
 // Avisos para lectores de pantalla: lo que se ve en el botón del micrófono y las respuestas escritas.
 let ultimaFase = "";
 function anunciar(t) {
@@ -654,20 +739,20 @@ function anunciarFase(fase) {
 }
 function pintarMic(fase) {
   anunciarFase(fase || "inactivo");
-  const b = $("btnMic");
+  const b = $("btnMic"), esc = $("escenario"), n = nombrePaciente();
   b.classList.toggle("grabando", fase === "escuchando");
   b.classList.toggle("hablando", fase === "hablando");
-  if (fase === "escuchando") {
-    const ayuda = seOyoVoz ? "Te escucho… toca para enviar ya" : "Te escucho… habla cuando quieras";
-    const span = b.querySelector(".ayuda");
-    if (span) span.textContent = ayuda; else b.innerHTML = BARRAS + '<span class="ayuda">' + ayuda + "</span>";
-  } else if (fase === "transcribiendo") b.textContent = "Pensando…";
-  else if (fase === "hablando") {
-    if (!vozActiva || !servicios.voz) { b.textContent = "…"; return; }
-    b.innerHTML = '<span class="barras ondas-auto" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span></span>';
-    b.lastChild.textContent = nombrePaciente() + " está hablando… toca para responder";
-  }
-  else b.textContent = modoConversacion || turnos.length ? "Continuar conversación" : "Iniciar conversación";
+  esc.classList.toggle("escuchando", fase === "escuchando");
+  $("ondas").classList.toggle("ondas-auto", fase === "hablando" && vozActiva && servicios.voz);
+  const empezada = modoConversacion || turnos.length > 0;
+  const [titulo, ayuda, etiqueta] =
+    fase === "escuchando" ? ["Te escucho…", seOyoVoz ? "Cuando dejes de hablar se envía solo. Toca el micrófono para enviarlo ya." : "Habla cuando quieras. Toca el micrófono para pausar.", seOyoVoz ? "Enviar ahora" : "Pausar conversación"]
+    : fase === "transcribiendo" ? ["Pensando…", n + " está escuchando lo que dijiste.", "Pensando"]
+    : fase === "hablando" ? [n + " está hablando", "Toca el micrófono para responder sin esperar.", "Responder ahora"]
+    : empezada ? ["Conversación en pausa", "Toca el micrófono para seguir conversando.", "Continuar conversación"]
+    : [n + " te espera", "Toca el micrófono, saluda y preséntate. Cuando dejes de hablar, tu intervención se envía sola.", "Iniciar conversación"];
+  $("estadoTitulo").textContent = titulo; $("estadoAyuda").textContent = ayuda;
+  b.setAttribute("aria-label", etiqueta); b.title = etiqueta;
 }
 function pausarConversacion() {
   modoConversacion = false;
@@ -719,7 +804,7 @@ function escucharVoz(stream) {
         if (!seOyoVoz && ahora - ultimaVoz > 600) vozAcumulada = Math.max(0, vozAcumulada - dt);
       }
       const nivel = Math.min(1, Math.sqrt(Math.sqrt(rms)) * 2.2);
-      $("btnMic").querySelectorAll(".barras i").forEach((b, i) => { b.style.height = Math.max(4, Math.round(22 * nivel * pesos[i])) + "px"; });
+      $("ondas").querySelectorAll("i").forEach((b, i) => { b.style.height = Math.max(4, Math.round(24 * nivel * pesos[i])) + "px"; });
       if (seOyoVoz && ahora - ultimaVoz > SILENCIO_FIN_MS) { terminarGrabacion(); return; }
       if (!seOyoVoz && ahora - comienzo > ESPERA_SIN_VOZ_MS) { pausaPorSilencio = true; modoConversacion = false; terminarGrabacion(); return; }
     };
@@ -728,6 +813,7 @@ function escucharVoz(stream) {
   } catch (e) { medidor = null; seOyoVoz = true; } // sin medidor, se graba como antes y se envía al tocar
 }
 function pararMedidor() {
+  $("ondas").querySelectorAll("i").forEach(b => { b.style.height = ""; });
   if (!medidor) return;
   clearInterval(medidor.intervalo); medidor.ctx.close().catch(() => {}); medidor = null;
 }
@@ -819,7 +905,7 @@ $("btnFeedback").onclick = async () => {
   $("cierre").classList.add("revisando"); $("cierre").classList.remove("celebra"); $("rHitosCaja").hidden = true;
   $("globoCierre").textContent = "Estoy revisando tu entrevista, dame unos segundos…";
   $("feedback").textContent = "";
-  $("secFeedback").hidden = false;
+  $("secFeedback").hidden = false; $("escenario").hidden = true;
   $("secFeedback").scrollIntoView({ block: "nearest" });
   estado(true);
   try {
@@ -841,7 +927,7 @@ $("btnFeedback").onclick = async () => {
         ? "Este caso tenía sus desafíos. Los hitos pendientes son tu mapa para la próxima entrevista."
         : animos[Math.floor(Math.random() * animos.length)];
     $("cierre").classList.toggle("celebra", hitos.length > 0 && logrados === hitos.length);
-  } catch (e) { $("secFeedback").hidden = true; mostrarAviso(e.message); }
+  } catch (e) { $("secFeedback").hidden = true; $("escenario").hidden = false; mostrarAviso(e.message); }
   finally { $("cierre").classList.remove("revisando"); estado(false); }
 };
 $("btnCopiar").onclick = async () => {
@@ -853,7 +939,8 @@ $("btnCopiar").onclick = async () => {
 $("btnNueva").onclick = () => {
   pausarConversacion(); callarPaciente(); turnos = []; inicio = null; $("reloj").textContent = "00:00";
   log.querySelectorAll(".turno").forEach(e => e.remove()); $("vacio").hidden = false;
-  $("secFeedback").hidden = true; $("sugerenciaCierre").hidden = true; mostrarAviso(""); contar(); pintarMic();
+  $("secFeedback").hidden = true; $("escenario").hidden = false; $("sugerenciaCierre").hidden = true; mostrarAviso(""); contar(); pintarMic();
+  mostrarSubtitulo(""); actualizarGuia();
 };
 $("btnSalirSeleccion").onclick = () => salir();
 $("btnPacientes").onclick = () => {
@@ -868,9 +955,45 @@ $("btnSalir").onclick = () => {
   window.scrollTo(0, 0);
 };
 
+/* Escribir en vez de hablar */
+$("btnEscribir").onclick = () => {
+  const abrir = $("form").hidden;
+  $("form").hidden = !abrir; $("btnEscribir").setAttribute("aria-expanded", String(abrir));
+  if (abrir) msg.focus();
+};
+$("btnNuevaFb").onclick = () => $("btnNueva").onclick();
+$("btnPacientesFb").onclick = () => $("btnPacientes").onclick();
+
+/* Modo práctica: guía de los tres momentos, marcada según lo que dice la estudiante */
+const GUIA = {
+  saludo: /\b(hola|buen[oa]s (d[ií]as|tardes|noches))\b/i,
+  presentacion: /\b(soy|me llamo|mi nombre es)\b/i,
+  confidencialidad: /(confidencial|privad|queda entre)/i,
+  abierta: /(qu[eé] (te|le) trae|cu[eé]nt(a|e)me|qu[eé] (te|le) pasa|en qu[eé] (te|le) (puedo )?ayud|c[oó]mo (te has|se ha) sentido|por qu[eé] (viniste|vino))/i,
+  sentir: /(c[oó]mo (te|se) sient|(te|le) preocupa|qu[eé] (piensas|cree|crees)|(te|le) da miedo|c[oó]mo (te|le) hace sentir)/i,
+  resumen: /(resum|si entend[ií] bien|entonces,? (lo que )?me (cuentas|cuenta|dices|dice))/i,
+  algomas: /(algo m[aá]s|otra cosa|alguna (otra )?(duda|pregunta|preocupaci))/i,
+  pasos: /(vamos a (pedir|hacer|tomar|solicitar)|pr[oó]ximo control|pr[oó]xima (cita|vez|semana)|derivar|acordamos|nos vemos|te voy a (pedir|dar|derivar|indicar))/i,
+};
+function actualizarGuia() {
+  const dichos = turnos.filter(t => t.role === "user").map(t => t.content);
+  const hecho = {};
+  for (const [k, re] of Object.entries(GUIA)) hecho[k] = dichos.some(t => re.test(t));
+  const cierre = hecho.resumen || hecho.algomas || (dichos.length >= 3 && dichos.some(t => DESPEDIDA.test(t)));
+  const momento = cierre ? 3 : dichos.length >= 2 || hecho.abierta ? 2 : 1;
+  document.querySelectorAll("#guia .momento").forEach(m => {
+    const n = Number(m.dataset.momento);
+    m.classList.toggle("hecho", n < momento); m.classList.toggle("actual", n === momento);
+    if (n === momento) m.setAttribute("aria-current", "step"); else m.removeAttribute("aria-current");
+  });
+  document.querySelectorAll("#guia [data-item]").forEach(li => li.classList.toggle("hecho", hecho[li.dataset.item]));
+}
+$("chkGuia").onchange = () => { guardar("guia", $("chkGuia").checked ? "1" : "0"); $("guia").hidden = !$("chkGuia").checked; };
+
 /* Inicio */
 (async () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
+  $("chkGuia").checked = leer("guia") !== "0"; $("guia").hidden = !$("chkGuia").checked;
   // El código no se guarda: cada vez que se abre la aplicación parte en el inicio.
   try { localStorage.removeItem("codigo"); } catch (e) {}
   codigo = "";
@@ -884,7 +1007,7 @@ $("btnSalir").onclick = () => {
     const faltan = [];
     if (!servicios.codigo) faltan.push("código de acceso");
     if (!servicios.claude) faltan.push("Claude");
-    if (!servicios.whisper) { faltan.push("Whisper"); $("btnMic").hidden = true; }
+    if (!servicios.whisper) { faltan.push("Whisper"); $("btnMic").hidden = true; $("btnEscribir").hidden = true; $("form").hidden = false; }
     if (!servicios.voz) { faltan.push("voz (ElevenLabs o Azure)"); $("btnVoz").hidden = true; }
     if (faltan.length) mostrarAviso("Falta configurar en Vercel: " + faltan.join(", ") + ".");
   } catch (e) { mostrarAviso("No se pudo conectar con el servidor."); }
