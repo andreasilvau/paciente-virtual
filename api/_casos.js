@@ -4,7 +4,7 @@
 
 export const CASOS = [
   {
-    id: "valentina",
+    id: "valentina", voz_id: "dZFAIFXrSaHlJY1R7xj2", // respaldo: la misma voz guardada en Supabase
     hitos: "- Identifica que olvida las pastillas y busca un método que no dependa de acordarse.\n- Explora sus miedos: dolor al poner la T y subir de peso con el implante.\n- Pregunta por dolores de cabeza y descubre la jaqueca con lucecitas (aura), relevante para elegir método.\n- Pregunta por uso de condón y riesgo de infecciones de transmisión sexual.\n- Detecta que nunca se ha hecho un PAP.",
     cierre: "- Pregunta pendiente: \"¿Y cuál me conviene más a mí?\". La hace si nadie le explicó con calma las opciones.\n- Preocupación oculta: le da vergüenza pedirle a Diego que use condón. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: agradece y dice que lo va a pensar.",
     rut: "11.111.111-1",
@@ -42,7 +42,7 @@ FORMA DE HABLAR
 Joven chilena, cercana y educada; trata de "usted". Usa palabras cotidianas ("pastillas", "la T", "el palito en el brazo").`,
   },
   {
-    id: "camila",
+    id: "camila", voz_id: "dZFAIFXrSaHlJY1R7xj2", // respaldo: la misma voz guardada en Supabase
     hitos: "- Asegura confidencialidad antes de preguntar por su vida sexual.\n- Caracteriza los síntomas: flujo, ardor al orinar, dolor bajo, sin fiebre.\n- Descubre las relaciones sin condón hace un mes.\n- Descubre que su pololo estuvo con otra persona.\n- Explora su miedo al VIH.\n- Detecta que nunca se ha hecho exámenes de ITS ni PAP.",
     cierre: "- Pregunta pendiente: \"¿Esto lo va a saber mi mamá?\". La hace si nadie le habló de confidencialidad.\n- Preocupación oculta: no sabe cómo decirle a Matías que también se tiene que hacer exámenes. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: \"Ya, gracias... ¿tengo que volver?\".",
     rut: "22.222.222-2",
@@ -82,7 +82,7 @@ FORMA DE HABLAR
 Joven chilena, informal pero respetuosa; trata de "usted" a quien la atiende. Usa palabras cotidianas ("pololo", "abajo", "flujo", "pipí", "guata"). No usa términos médicos ni conoce nombres de infecciones, salvo VIH.`,
   },
   {
-    id: "benjamin",
+    id: "benjamin", voz_id: "cMKZRsVE5V7xf6qCp9fF", // respaldo: la misma voz guardada en Supabase
     hitos: "- Descubre el motivo real: anticoncepción de emergencia para su polola.\n- Precisa cuándo fue la relación sin condón (hace dos días) y que hubo alcohol.\n- Explora con cuidado si ambos estaban de acuerdo y en condiciones de decidir.\n- Aborda su preocupación por infecciones de transmisión sexual.\n- Explora su red de apoyo: no ha hablado con ningún adulto.",
     cierre: "- Pregunta pendiente: \"¿Hasta cuándo se puede tomar la pastilla?\". La hace si nadie se lo explicó.\n- Preocupación oculta: siente que \"la cagó\" y le preocupa cómo está Antonia. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: \"Ya, buena, gracias\".",
     rut: "33.333.333-3",
@@ -126,7 +126,7 @@ REGLA ADICIONAL
 Es un personaje menor de edad en un contexto clínico. No describas detalles sexuales: responde siempre en términos generales, como en una consulta real.`,
   },
   {
-    id: "mariaeugenia",
+    id: "mariaeugenia", voz_id: "prblQcKOdF08ozhxP2mk", // respaldo: la misma voz guardada en Supabase
     hitos: "- Caracteriza el sangrado posmenopáusico: cuándo, cuánto y cuántos días.\n- Precisa la edad de la menopausia (51 años).\n- Detecta el PAP atrasado.\n- Descubre el antecedente de su hermana con cáncer de útero.\n- Identifica factores de riesgo: hipertensión, sobrepeso, glicemia alta.\n- Explora su miedo detrás del apuro.",
     cierre: "- Pregunta pendiente: \"¿Cuánto se demoran los exámenes? No puedo faltar al trabajo\". La hace si nadie le explicó los próximos pasos.\n- Preocupación oculta: no le ha contado nada a su marido para no preocuparlo. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: apurada, mira la hora y agradece.",
     rut: "44.444.444-4",
@@ -166,7 +166,7 @@ FORMA DE HABLAR
 Mujer chilena de 58 años, cordial pero práctica; trata de "usted" o de "mijita" si toma confianza. Usa palabras cotidianas ("la regla", "manchita", "la guata", "la presión").`,
   },
   {
-    id: "javiera",
+    id: "javiera", voz_id: "JM2A9JbRp8XUJ7bdCXJc", // respaldo: la misma voz guardada en Supabase
     hitos: "- Controla bienestar fetal y signos de alarma del embarazo.\n- Indaga por qué faltó al control anterior.\n- Pregunta por el moretón del antebrazo.\n- Detecta control económico y aislamiento.\n- Pregunta en forma directa y privada si alguien la ha tratado mal.\n- Evalúa si se siente segura en su casa.\n- Ofrece ayuda y redes sin presionarla a denunciar.",
     cierre: "- Pregunta pendiente: \"¿Usted le va a decir algo a él?\". La hace si conversaron sobre su pareja y nadie le aclaró la confidencialidad.\n- Preocupación oculta: tiene miedo de lo que pase cuando nazca el bebé. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: mira el celular y dice \"él me está esperando\".",
     rut: "55.555.555-5",
@@ -209,7 +209,7 @@ REGLA ADICIONAL
 No describas violencia en detalle gráfico. Si la estudiante pregunta por un plan de seguridad o por redes de apoyo, responde como Javiera: con dudas, pero abierta a escuchar.`,
   },
   {
-    id: "mirlande",
+    id: "mirlande", voz_id: "zrSW32jq7VkNEcoH7dG7", // respaldo: la misma voz guardada en Supabase
     hitos: "- Verifica que entienda (le pide que explique con sus palabras).\n- Estima la fecha de la última regla con ayuda de referencias.\n- Indaga su embarazo anterior: parto en casa, en Haití.\n- Pregunta por remedios naturales y descubre la infusión de hierbas.\n- Respeta su preferencia por una profesional mujer.\n- Aborda su preocupación por el costo y el horario.",
     cierre: "- Pregunta pendiente: \"¿Tengo que pagar?\". La hace si nadie le habló del costo.\n- Preocupación oculta: no sabe cómo es tener un hijo en un hospital en Chile y quiere que Jean pueda acompañarla. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: \"Mèsi, mèsi\".",
     rut: "66.666.666-6",
@@ -248,7 +248,7 @@ FORMA DE HABLAR
 Español sencillo con frases cortas y algunos errores de concordancia, sin exagerar ni caricaturizar. A veces usa palabras en creole o francés ("wi" por sí, "mèsi" por gracias). Trata de "usted". Si no entiende, dice "¿cómo?" o "no comprendo bien".`,
   },
   {
-    id: "sofia",
+    id: "sofia", voz_id: "dZFAIFXrSaHlJY1R7xj2", // respaldo: la misma voz guardada en Supabase
     hitos: "- Adapta la comunicación: una pregunta a la vez, concreta, sin metáforas.\n- Caracteriza el dolor con una escala numérica.\n- Detecta ciclos irregulares (35 a 60 días).\n- Descubre acné y vello en el mentón.\n- Explora el ausentismo escolar por el dolor.\n- Pregunta por su comodidad (luz, ruido).\n- Le habla a ella y no a su mamá.",
     cierre: "- Pregunta pendiente: \"¿Qué va a pasar ahora? ¿Me van a hacer un examen?\". Necesita saber el paso siguiente; la hace si nadie se lo explicó.\n- Preocupación oculta: no quiere que su mamá entre al examen físico. Solo la cuenta si le preguntan si hay algo más que le preocupe.\n- Despedida: formal, \"Gracias. Adiós\".",
     rut: "77.777.777-7",

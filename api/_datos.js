@@ -47,7 +47,7 @@ function desdeArchivo(c, i) {
   return {
     id: c.id, orden: (i + 1) * 10, activo: true, nombre: c.nombre, sexo: c.sexo || "femenino", edad: c.edad, rut: c.rut || "",
     atencion: c.atencion, motivo: c.motivo, nivel_dificultad: c.nivel, desafio: c.desafio, foco_cicaa: c.foco, carreras: [],
-    identificacion: c.identificacion || "", guion_completo: c.guion, hitos: c.hitos || "", cierre: c.cierre || "", voz_id: null,
+    identificacion: c.identificacion || "", guion_completo: c.guion, hitos: c.hitos || "", cierre: c.cierre || "", voz_id: c.voz_id || null,
   };
 }
 

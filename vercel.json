@@ -3,5 +3,8 @@
     "api/chat.js": { "maxDuration": 60 },
     "api/hablar.js": { "maxDuration": 60 },
     "api/transcribir.js": { "maxDuration": 60 }
-  }
+  },
+  "crons": [
+    { "path": "/api/estado", "schedule": "17 13 * * *" }
+  ]
 }
