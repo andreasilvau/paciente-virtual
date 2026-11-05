@@ -247,6 +247,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .dictado { color: var(--muted); font-style: italic; max-width: 46ch; }
 .dictado::before { content: "Tú: "; font-style: normal; font-weight: 700; }
 .subtitulo { font-size: 1.3rem; line-height: 1.45; max-width: 34ch; text-wrap: pretty; }
+.opciones-voz { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 20px; }
 .interruptor.envio { font-weight: 400; font-size: .92rem; color: var(--muted); min-height: 44px; }
 .controles { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
 .pildora { min-height: 52px; padding: 0 22px; border-radius: 26px; }
@@ -392,7 +393,10 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
           <button id="btnMic" type="button" aria-label="Iniciar conversación" title="Iniciar conversación"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
           <button id="btnFeedback" type="button" class="pildora oscura">Terminar y ver retroalimentación</button>
         </div>
-        <label class="interruptor envio"><input type="checkbox" id="chkEnvioAuto"> Enviar sola cuando hago una pausa</label>
+        <div class="opciones-voz">
+          <label class="interruptor envio"><input type="checkbox" id="chkAbrirSolo"> Abrir el micrófono solo después de cada respuesta</label>
+          <label class="interruptor envio"><input type="checkbox" id="chkEnvioAuto"> Enviar sola cuando hago una pausa</label>
+        </div>
         <form class="compositor" id="form" hidden>
           <textarea id="msg" rows="1" placeholder="Escribe tu intervención" aria-label="Tu intervención"></textarea>
           <button id="btnEnviar" type="submit">Enviar</button>
@@ -653,7 +657,8 @@ async function enviar(texto) {
     if (voz) pintarMic("hablando");
     await sonando;
     if (!grabador && !ocupado) {
-      if (modoConversacion && $("secFeedback").hidden && !$("app").hidden) empezarGrabacion();
+      // Por defecto el micrófono espera a que toques para responder; quien lo prefiera, lo deja abrirse solo.
+      if (modoConversacion && abrirSolo && $("secFeedback").hidden && !$("app").hidden) empezarGrabacion();
       else pintarMic();
     }
   } catch (e) {
@@ -760,6 +765,7 @@ const SILENCIO_FIN_MS = 900;
 // Por defecto la intervención se envía al tocar el micrófono: así una pausa para pensar no la corta.
 // Quien prefiera el envío automático por silencio lo activa en la casilla (se recuerda en el navegador).
 let envioAutomatico = false;
+let abrirSolo = false; // abrir el micrófono automáticamente cuando la paciente termina de hablar
 const SILENCIO_DICTADO_MS = 900; // con dictado del navegador: pausa sin palabras nuevas que cierra la intervención     // pausa que marca el fin de la intervención
 const VOZ_MINIMA_MS = 250;        // voz acumulada para considerar que habló (evita ruidos sueltos)
 const ESPERA_SIN_VOZ_MS = 15000;  // si nadie habla en este tiempo, la conversación se pausa
@@ -797,6 +803,7 @@ function pintarMic(fase) {
         seOyoVoz ? "Enviar mi intervención" : "Pausar conversación"]
     : fase === "transcribiendo" ? ["Pensando…", n + " está escuchando lo que dijiste.", "Pensando"]
     : fase === "hablando" ? [n + " está hablando", "Toca el micrófono para responder sin esperar.", "Responder ahora"]
+    : empezada && modoConversacion && !abrirSolo ? ["Te toca", "Tómate tu tiempo. Toca el micrófono cuando quieras responder.", "Responder"]
     : empezada ? ["Conversación en pausa", "Toca el micrófono para seguir conversando.", "Continuar conversación"]
     : [n + " te espera", envioAutomatico ? "Toca el micrófono, saluda y preséntate. Cuando dejes de hablar, tu intervención se envía sola." : "Toca el micrófono, saluda y preséntate. Cuando termines de hablar, vuelve a tocarlo para enviar.", "Iniciar conversación"];
   $("estadoTitulo").textContent = titulo; $("estadoAyuda").textContent = ayuda;
@@ -1113,6 +1120,10 @@ function actualizarGuia() {
 }
 $("chkGuia").onchange = () => { if (reglaGuia !== "libre") return; guardar("guia", $("chkGuia").checked ? "1" : "0"); $("guia").hidden = !$("chkGuia").checked; };
 
+$("chkAbrirSolo").onchange = () => {
+  abrirSolo = $("chkAbrirSolo").checked; guardar("abrir", abrirSolo ? "1" : "0");
+  if (!grabador) pintarMic();
+};
 $("chkEnvioAuto").onchange = () => {
   envioAutomatico = $("chkEnvioAuto").checked; guardar("envio", envioAutomatico ? "auto" : "manual");
   if (!grabador) pintarMic(); else pintarMic("escuchando");
@@ -1123,6 +1134,7 @@ $("chkEnvioAuto").onchange = () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
   aplicarReglaGuia("libre");
   envioAutomatico = leer("envio") === "auto"; $("chkEnvioAuto").checked = envioAutomatico;
+  abrirSolo = leer("abrir") === "1"; $("chkAbrirSolo").checked = abrirSolo;
   // El código no se guarda: cada vez que se abre la aplicación parte en el inicio.
   try { localStorage.removeItem("codigo"); } catch (e) {}
   codigo = "";
