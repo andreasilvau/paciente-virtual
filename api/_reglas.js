@@ -19,6 +19,24 @@ const SALUDOS = [
   "contesta el saludo y deja salir un comentario sobre la espera o el lugar",
 ];
 
+// Estilo de respuesta que la docente define en el panel (cada opción se traduce a una instrucción).
+const ESTILO = {
+  largo: { muy_breve: "Respuestas muy cortas: casi siempre una frase o menos.", breve: "Respuestas breves: una o dos frases.", conversador: "Respuestas algo más largas: dos o tres frases cuando la pregunta es abierta; a las preguntas cerradas igual responde corto." },
+  informacion: { reservada: "Le cuesta hablar: responde lo mínimo y hay que preguntarle varias veces, o con tacto, para que cuente más.", justa: "Entrega solo lo que le preguntan, sin agregar datos.", abierta: "Cuenta con facilidad lo que le preguntan, con algún detalle cotidiano, pero sin adelantar información clínica que no le pidieron ni su preocupación oculta." },
+  muletillas: { ninguna: "No usa muletillas.", pocas: "Usa muletillas solo de vez en cuando.", frecuentes: "Usa muletillas con frecuencia, como alguien nervioso o muy coloquial." },
+  trato: { usted: "Trata de «usted» a quien la entrevista.", tu: "Tutea a quien la entrevista." },
+  registro: { formal: "Lenguaje formal y cuidado.", coloquial: "Español chileno coloquial y cotidiano.", juvenil: "Lenguaje juvenil chileno (por ejemplo «cachai», «igual», «como que»), sin exagerar." },
+};
+export function textoEstilo(e) {
+  if (!e || typeof e !== "object") return "";
+  const l = [];
+  for (const k of ["largo", "informacion", "registro", "trato", "muletillas"]) if (ESTILO[k][e[k]]) l.push("- " + ESTILO[k][e[k]]);
+  if (e.usa && String(e.usa).trim()) l.push(`- Palabras o expresiones que usa: ${String(e.usa).trim()}.`);
+  if (e.evita && String(e.evita).trim()) l.push(`- Nunca dice: ${String(e.evita).trim()}.`);
+  if (e.ejemplo && String(e.ejemplo).trim()) l.push(`- Ejemplo del tono de sus respuestas (no lo copies, solo imita el estilo): ${String(e.ejemplo).trim()}`);
+  return l.length ? `ESTILO DE RESPUESTA DE ESTE PERSONAJE (lo definió la docente; manda sobre "Cómo hablar")\n${l.join("\n")}\n\n` : "";
+}
+
 export function reglasPaciente(c, semilla = 0) {
   const el = c.sexo === "masculino";
   const unP = el ? "un paciente simulado" : "una paciente simulada", elP = el ? "el paciente" : "la paciente";
@@ -41,7 +59,7 @@ CÓMO HABLAR
 - No empieces con "Ya": úsalo como máximo una vez en toda la entrevista. Tampoco empieces seguido con "Bueno", "Mmm" o "Eh". Nunca empieces dos respuestas seguidas igual.
 - No escribas risas ni ruidos ("je", "jaja", "ejem"): en voz alta suenan mal. Si algo te causa gracia o nervios, dilo con palabras.
 
-HOY, EN ESTA ENTREVISTA
+${textoEstilo(c.estilo)}HOY, EN ESTA ENTREVISTA
 - ${el ? matiz.replace("agitada", "agitado").replace("cansada", "cansado").replace("nerviosa", "nervioso").replace("desorientada", "desorientado").replace("tranquila", "tranquilo").replace("tímida", "tímido").replace("distraída", "distraído") : matiz} Que se note solo un poco, sin inventar datos clínicos.
 - En tu primera respuesta, ${saludo}. No repitas la frase de inicio del guion palabra por palabra: di la idea con tus palabras y a tu ritmo.
 

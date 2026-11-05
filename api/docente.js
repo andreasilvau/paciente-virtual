@@ -46,6 +46,12 @@ function limpiar(datos) {
     else if (k === "activo") v = Boolean(v);
     else if (k === "carreras") v = (Array.isArray(v) ? v : String(v || "").split(",")).map(x => String(x).trim()).filter(Boolean).slice(0, 20);
     else if (k === "voz_id") v = String(v || "").trim() || null;
+    else if (k === "estilo") {
+      // Solo las claves conocidas, como texto corto.
+      const e = {};
+      if (v && typeof v === "object") for (const c of ["largo", "informacion", "registro", "trato", "muletillas", "usa", "evita", "ejemplo"]) if (v[c]) e[c] = String(v[c]).slice(0, 400);
+      v = e;
+    }
     else v = String(v ?? "").slice(0, 8000);
     fila[k] = v;
   }

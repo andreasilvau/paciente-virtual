@@ -75,6 +75,11 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .peligro { color: var(--rec); border-color: color-mix(in srgb, var(--rec) 45%, var(--line)); }
 .peligro:hover:not(:disabled) { background: color-mix(in srgb, var(--rec) 10%, transparent); }
 #estadoGuardado.err { color: var(--rec); font-weight: 700; }
+.estilo-cab { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chips button { font-size: .82rem; padding: 4px 10px; min-height: 32px; border-radius: 16px; }
+.vista-estilo summary { cursor: pointer; font-weight: 700; color: var(--accent); }
+.vista-estilo pre { white-space: pre-wrap; font-family: inherit; font-size: .9rem; line-height: 1.5; background: var(--soft); border-radius: 8px; padding: 10px 12px; margin: 8px 0 0; }
 .pron-fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 10px; align-items: center; }
 .pron-cab { font-weight: 700; font-size: .9rem; color: var(--muted); }
 .actividades { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -203,6 +208,31 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       </fieldset>
 
       <fieldset>
+        <legend>Estilo de respuesta</legend>
+        <div class="campo ancho estilo-cab">
+          <p class="ayuda">Define cómo responde el personaje: cuánto habla, cuánto cuenta y con qué palabras. Puedes partir con «Autocompletar», que propone un estilo según la edad, el nivel y la carga emocional, y luego ajustarlo.</p>
+          <button type="button" id="btnAutoEstilo">Autocompletar según el personaje</button>
+        </div>
+        <div class="campo"><label for="e_largo">Largo de las respuestas</label><select id="e_largo">
+          <option value="">Como las reglas generales (breve)</option><option value="muy_breve">Muy breves: una frase o menos</option><option value="breve">Breves: una o dos frases</option><option value="conversador">Conversador: dos o tres frases</option></select></div>
+        <div class="campo"><label for="e_informacion">Cuánto cuenta</label><select id="e_informacion">
+          <option value="">Como las reglas generales</option><option value="reservada">Reservada: hay que insistir</option><option value="justa">Solo lo que le preguntan</option><option value="abierta">Abierta: cuenta con facilidad</option></select></div>
+        <div class="campo"><label for="e_registro">Registro</label><select id="e_registro">
+          <option value="">Según la forma de hablar</option><option value="coloquial">Coloquial chileno</option><option value="juvenil">Juvenil chileno</option><option value="formal">Formal</option></select></div>
+        <div class="campo"><label for="e_trato">Trato a quien la entrevista</label><select id="e_trato">
+          <option value="">Según su edad</option><option value="usted">De «usted»</option><option value="tu">De «tú»</option></select></div>
+        <div class="campo"><label for="e_muletillas">Muletillas</label><select id="e_muletillas">
+          <option value="">Como las reglas generales</option><option value="ninguna">Ninguna</option><option value="pocas">Pocas</option><option value="frecuentes">Frecuentes</option></select></div>
+        <div class="campo ancho"><label for="e_usa">Palabras o expresiones que usa</label><input type="text" id="e_usa" placeholder="ej. el PAP, la guata, mijita">
+          <div class="chips" data-para="e_usa"></div></div>
+        <div class="campo ancho"><label for="e_evita">Palabras que nunca dice</label><input type="text" id="e_evita" placeholder="ej. Ya al comienzo, Papanicolau">
+          <div class="chips" data-para="e_evita"></div></div>
+        <div class="campo ancho"><label for="e_ejemplo">Ejemplo de una respuesta típica (opcional)</label><textarea id="e_ejemplo" rows="2" placeholder="ej. No sé po… hace harto que no me lo hacía."></textarea>
+          <span class="ayuda">Sirve para mostrar el tono. La paciente no lo copia, solo lo imita.</span></div>
+        <details class="campo ancho vista-estilo"><summary>Ver cómo se lo indicamos a la paciente</summary><pre id="vistaEstilo"></pre></details>
+      </fieldset>
+
+      <fieldset>
         <legend>Cierre e hitos</legend>
         <div class="campo ancho"><label for="f_cierre">Cierre de la entrevista</label><textarea id="f_cierre" rows="5"></textarea><span class="ayuda">Pregunta pendiente (la hace si nadie se la respondió), preocupación oculta (solo si le preguntan «¿algo más?») y despedida.</span></div>
         <div class="campo ancho"><label for="f_hitos">Hitos del caso</label><textarea id="f_hitos" rows="7"></textarea><span class="ayuda">Lo que el estudiante debería descubrir o hacer, uno por línea. El personaje no los ve; la retroalimentación marca cada uno como logrado, en parte o pendiente.</span></div>
@@ -295,6 +325,7 @@ function abrir(c) {
   }
   $("f_frase").value = c ? fraseDe(c) : "Hola, buenas tardes.";
   pintarFocos();
+  pintarEstilo(c && c.estilo);
   sincronizarListaVoz();
   for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && Boolean(c));
   $("f_frase").disabled = false; $("f_voz_lista").disabled = !editable && false;
@@ -440,6 +471,7 @@ $("editor").addEventListener("submit", async e => {
   const datos = {};
   for (const k of CAMPOS) { const el = $("f_" + k); if (el) datos[k] = el.type === "checkbox" ? el.checked : el.value; }
   datos.carreras = String(datos.carreras || "").split(",").map(s => s.trim()).filter(Boolean);
+  datos.estilo = leerEstilo();
   const id = (nuevo ? $("f_id").value : actual.id).trim().toLowerCase();
   $("btnGuardar").disabled = true; $("estadoGuardado").textContent = "Guardando…"; $("estadoGuardado").className = "";
   try {
@@ -453,6 +485,70 @@ $("editor").addEventListener("submit", async e => {
   } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; }
   finally { $("btnGuardar").disabled = !editable; }
 });
+
+/* Estilo de respuesta: opciones que se traducen en instrucciones para la paciente */
+const ESTILO_TXT = {
+  largo: { muy_breve: "Respuestas muy cortas: casi siempre una frase o menos.", breve: "Respuestas breves: una o dos frases.", conversador: "Respuestas algo más largas: dos o tres frases cuando la pregunta es abierta; a las preguntas cerradas igual responde corto." },
+  informacion: { reservada: "Le cuesta hablar: responde lo mínimo y hay que preguntarle varias veces, o con tacto, para que cuente más.", justa: "Entrega solo lo que le preguntan, sin agregar datos.", abierta: "Cuenta con facilidad lo que le preguntan, con algún detalle cotidiano, pero sin adelantar información clínica que no le pidieron ni su preocupación oculta." },
+  registro: { formal: "Lenguaje formal y cuidado.", coloquial: "Español chileno coloquial y cotidiano.", juvenil: "Lenguaje juvenil chileno (por ejemplo «cachai», «igual», «como que»), sin exagerar." },
+  trato: { usted: "Trata de «usted» a quien la entrevista.", tu: "Tutea a quien la entrevista." },
+  muletillas: { ninguna: "No usa muletillas.", pocas: "Usa muletillas solo de vez en cuando.", frecuentes: "Usa muletillas con frecuencia, como alguien nervioso o muy coloquial." },
+};
+const SUGERENCIAS = {
+  e_usa: ["el PAP", "la regla", "la guata", "la presión", "las hormonas", "mijita", "cachai", "igual", "po", "harto", "altiro"],
+  e_evita: ["Ya al comienzo", "Papanicolau", "palabras técnicas", "groserías"],
+};
+const CLAVES_ESTILO = ["largo", "informacion", "registro", "trato", "muletillas", "usa", "evita", "ejemplo"];
+function leerEstilo() {
+  const e = {};
+  for (const k of CLAVES_ESTILO) { const v = $("e_" + k).value.trim(); if (v) e[k] = v; }
+  return e;
+}
+function pintarEstilo(e) {
+  e = e || {};
+  for (const k of CLAVES_ESTILO) $("e_" + k).value = e[k] || "";
+  vistaEstilo();
+}
+function vistaEstilo() {
+  const e = leerEstilo(), l = [];
+  for (const k of ["largo", "informacion", "registro", "trato", "muletillas"]) if (ESTILO_TXT[k][e[k]]) l.push("• " + ESTILO_TXT[k][e[k]]);
+  if (e.usa) l.push(`• Palabras o expresiones que usa: ${e.usa}.`);
+  if (e.evita) l.push(`• Nunca dice: ${e.evita}.`);
+  if (e.ejemplo) l.push(`• Ejemplo del tono (no lo copia, solo lo imita): ${e.ejemplo}`);
+  $("vistaEstilo").textContent = l.length ? l.join("\n") : "Sin estilo propio: la paciente sigue las reglas generales (respuestas breves, solo lo que le preguntan).";
+}
+// Sugerencias que se agregan con un toque al campo de texto (separadas por coma).
+for (const caja of document.querySelectorAll(".chips")) {
+  const campo = $(caja.dataset.para);
+  for (const palabra of SUGERENCIAS[caja.dataset.para]) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "+ " + palabra;
+    b.onclick = () => {
+      const actuales = campo.value.split(",").map(x => x.trim()).filter(Boolean);
+      if (!actuales.some(x => x.toLowerCase() === palabra.toLowerCase())) actuales.push(palabra);
+      campo.value = actuales.join(", "); cambios = true; vistaEstilo();
+    };
+    caja.append(b);
+  }
+}
+for (const k of CLAVES_ESTILO) $("e_" + k).addEventListener("input", vistaEstilo);
+for (const k of CLAVES_ESTILO) $("e_" + k).addEventListener("change", vistaEstilo);
+// Propone un estilo a partir de la edad, el nivel, la carga emocional y la forma de hablar.
+$("btnAutoEstilo").onclick = () => {
+  const edad = parseInt($("f_edad").value, 10) || 30, nivel = $("f_nivel_dificultad").value;
+  const carga = ($("f_carga_emocional").value + " " + $("f_desafio").value).toLowerCase(), forma = $("f_forma_de_hablar").value;
+  const lleno = CLAVES_ESTILO.some(k => $("e_" + k).value.trim());
+  if (lleno && !confirm("Esto reemplaza el estilo actual por una propuesta. ¿Seguir?")) return;
+  $("e_largo").value = nivel === "Avanzado" ? "muy_breve" : nivel === "Básico" ? "conversador" : "breve";
+  $("e_informacion").value = nivel === "Avanzado" || /vergüenza|verguenza|miedo|descon|minimiza|evita|cerrad/.test(carga) ? "reservada" : nivel === "Básico" ? "abierta" : "justa";
+  $("e_registro").value = /formal|precisa|técnic/.test(forma.toLowerCase()) ? "formal" : edad < 20 ? "juvenil" : "coloquial";
+  $("e_trato").value = edad < 20 ? "tu" : "usted";
+  $("e_muletillas").value = /formal|precisa/.test(forma.toLowerCase()) ? "ninguna" : /nerv|ansios|apurad|vergüenza|verguenza/.test(carga) ? "frecuentes" : "pocas";
+  // Palabras entre comillas en la forma de hablar pasan a «usa».
+  const citadas = [...forma.matchAll(/["“«]([^"”»]{2,30})["”»]/g)].map(m => m[1].trim()).filter(x => !/^usted$|^tú$/i.test(x));
+  $("e_usa").value = [...new Set(citadas)].slice(0, 8).join(", ");
+  $("e_evita").value = "Ya al comienzo";
+  cambios = true; vistaEstilo();
+};
 
 /* Pronunciación: diccionario que se aplica a la voz de todos los personajes */
 function filaPron(escrito = "", dice = "") {
