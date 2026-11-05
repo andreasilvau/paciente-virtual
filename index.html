@@ -247,6 +247,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .dictado { color: var(--muted); font-style: italic; max-width: 46ch; }
 .dictado::before { content: "Tú: "; font-style: normal; font-weight: 700; }
 .subtitulo { font-size: 1.3rem; line-height: 1.45; max-width: 34ch; text-wrap: pretty; }
+.interruptor.envio { font-weight: 400; font-size: .92rem; color: var(--muted); min-height: 44px; }
 .controles { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
 .pildora { min-height: 52px; padding: 0 22px; border-radius: 26px; }
 .pildora.oscura { background: var(--ink); color: var(--bg); border-color: var(--ink); }
@@ -391,6 +392,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
           <button id="btnMic" type="button" aria-label="Iniciar conversación" title="Iniciar conversación"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
           <button id="btnFeedback" type="button" class="pildora oscura">Terminar y ver retroalimentación</button>
         </div>
+        <label class="interruptor envio"><input type="checkbox" id="chkEnvioAuto"> Enviar sola cuando hago una pausa</label>
         <form class="compositor" id="form" hidden>
           <textarea id="msg" rows="1" placeholder="Escribe tu intervención" aria-label="Tu intervención"></textarea>
           <button id="btnEnviar" type="submit">Enviar</button>
@@ -442,7 +444,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 <script>
 const $ = id => document.getElementById(id);
 const log = $("log"), msg = $("msg"), aviso = $("aviso");
-const MAX_GRABACION_MS = 60000;
+const MAX_GRABACION_MS = 120000;
 let semilla = Math.floor(Math.random() * 1e6);
 let codigo = "", turnos = [], ocupado = false, inicio = null, vozActiva = true, servicios = {};
 let grabador = null, trozos = [], corteGrabacion = null;
@@ -755,6 +757,9 @@ function tipoGrabacion() {
 // Conversación continua: después del primer toque, el micrófono se abre solo en cada turno
 // y la intervención se envía sola cuando la estudiante deja de hablar.
 const SILENCIO_FIN_MS = 900;
+// Por defecto la intervención se envía al tocar el micrófono: así una pausa para pensar no la corta.
+// Quien prefiera el envío automático por silencio lo activa en la casilla (se recuerda en el navegador).
+let envioAutomatico = false;
 const SILENCIO_DICTADO_MS = 900; // con dictado del navegador: pausa sin palabras nuevas que cierra la intervención     // pausa que marca el fin de la intervención
 const VOZ_MINIMA_MS = 250;        // voz acumulada para considerar que habló (evita ruidos sueltos)
 const ESPERA_SIN_VOZ_MS = 15000;  // si nadie habla en este tiempo, la conversación se pausa
@@ -785,11 +790,15 @@ function pintarMic(fase) {
   $("ondas").classList.toggle("ondas-auto", (fase === "hablando" && vozActiva && servicios.voz) || dictando);
   const empezada = modoConversacion || turnos.length > 0;
   const [titulo, ayuda, etiqueta] =
-    fase === "escuchando" ? ["Te escucho…", seOyoVoz ? "Cuando dejes de hablar se envía solo. Toca el micrófono para enviarlo ya." : "Habla cuando quieras. Toca el micrófono para pausar.", seOyoVoz ? "Enviar ahora" : "Pausar conversación"]
+    fase === "escuchando" ? ["Te escucho…",
+        envioAutomatico
+          ? (seOyoVoz ? "Cuando dejes de hablar se envía solo. Toca el micrófono para enviarlo ya." : "Habla cuando quieras. Toca el micrófono para pausar.")
+          : (seOyoVoz ? "Puedes hacer pausas. Toca el micrófono cuando termines de hablar." : "Habla cuando quieras y toca el micrófono cuando termines."),
+        seOyoVoz ? "Enviar mi intervención" : "Pausar conversación"]
     : fase === "transcribiendo" ? ["Pensando…", n + " está escuchando lo que dijiste.", "Pensando"]
     : fase === "hablando" ? [n + " está hablando", "Toca el micrófono para responder sin esperar.", "Responder ahora"]
     : empezada ? ["Conversación en pausa", "Toca el micrófono para seguir conversando.", "Continuar conversación"]
-    : [n + " te espera", "Toca el micrófono, saluda y preséntate. Cuando dejes de hablar, tu intervención se envía sola.", "Iniciar conversación"];
+    : [n + " te espera", envioAutomatico ? "Toca el micrófono, saluda y preséntate. Cuando dejes de hablar, tu intervención se envía sola." : "Toca el micrófono, saluda y preséntate. Cuando termines de hablar, vuelve a tocarlo para enviar.", "Iniciar conversación"];
   $("estadoTitulo").textContent = titulo; $("estadoAyuda").textContent = ayuda;
   b.setAttribute("aria-label", etiqueta); b.title = etiqueta;
 }
@@ -826,7 +835,7 @@ function empezarReconocimiento(inicioPrevio) {
     for (const r of e.results) { if (r.isFinal) f += r[0].transcript; else pr += r[0].transcript; }
     finalTxt = f; provisional = pr; mostrarDictado(f + pr);
     if (!seOyoVoz) { seOyoVoz = true; pintarMic("escuchando"); }
-    clearTimeout(g.pausa); g.pausa = setTimeout(enviarYa, SILENCIO_DICTADO_MS);
+    clearTimeout(g.pausa); if (envioAutomatico) g.pausa = setTimeout(enviarYa, SILENCIO_DICTADO_MS);
   };
   reco.onerror = e => { g.error = e.error; };
   reco.onend = () => {
@@ -918,7 +927,7 @@ function escucharVoz(stream) {
       }
       const nivel = Math.min(1, Math.sqrt(Math.sqrt(rms)) * 2.2);
       $("ondas").querySelectorAll("i").forEach((b, i) => { b.style.height = Math.max(4, Math.round(24 * nivel * pesos[i])) + "px"; });
-      if (seOyoVoz && ahora - ultimaVoz > SILENCIO_FIN_MS) { terminarGrabacion(); return; }
+      if (envioAutomatico && seOyoVoz && ahora - ultimaVoz > SILENCIO_FIN_MS) { terminarGrabacion(); return; }
       if (!seOyoVoz && ahora - comienzo > ESPERA_SIN_VOZ_MS) { pausaPorSilencio = true; modoConversacion = false; terminarGrabacion(); return; }
     };
     // setInterval sigue funcionando aunque la pestaña quede en segundo plano.
@@ -1104,10 +1113,16 @@ function actualizarGuia() {
 }
 $("chkGuia").onchange = () => { if (reglaGuia !== "libre") return; guardar("guia", $("chkGuia").checked ? "1" : "0"); $("guia").hidden = !$("chkGuia").checked; };
 
+$("chkEnvioAuto").onchange = () => {
+  envioAutomatico = $("chkEnvioAuto").checked; guardar("envio", envioAutomatico ? "auto" : "manual");
+  if (!grabador) pintarMic(); else pintarMic("escuchando");
+};
+
 /* Inicio */
 (async () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
   aplicarReglaGuia("libre");
+  envioAutomatico = leer("envio") === "auto"; $("chkEnvioAuto").checked = envioAutomatico;
   // El código no se guarda: cada vez que se abre la aplicación parte en el inicio.
   try { localStorage.removeItem("codigo"); } catch (e) {}
   codigo = "";
