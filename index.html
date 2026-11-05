@@ -650,7 +650,8 @@ async function enviar(texto) {
     b.classList.remove("espera"); b.textContent = resp; mostrarSubtitulo(resp);
     if (!voz) anunciar(nombrePaciente() + ": " + resp);
     turnos.push({ role: "assistant", content: resp });
-    const seDespide = DESPEDIDA.test(texto) && turnos.filter(t => t.role === "user").length >= 3;
+    // Se da por cerrada la entrevista si la estudiante se despide o si la paciente se despide.
+    const seDespide = turnos.filter(t => t.role === "user").length >= 3 && (DESPEDIDA.test(texto) || DESPEDIDA.test(resp));
     if (seDespide) { $("sugerenciaCierre").hidden = false; mostrarAlFinal($("sugerenciaCierre")); pausarConversacion(); }
     estado(false);
     // Mientras la paciente habla el micrófono espera; al terminar, vuelve a escuchar solo.

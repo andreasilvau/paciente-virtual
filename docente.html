@@ -75,6 +75,13 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .peligro { color: var(--rec); border-color: color-mix(in srgb, var(--rec) 45%, var(--line)); }
 .peligro:hover:not(:disabled) { background: color-mix(in srgb, var(--rec) 10%, transparent); }
 #estadoGuardado.err { color: var(--rec); font-weight: 700; }
+.ident { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px 16px; margin-top: 6px; }
+.ident .ancho { grid-column: 1 / -1; }
+.ident .doble { grid-column: span 2; }
+@media (max-width: 600px) { .ident .doble { grid-column: 1 / -1; } }
+.con-boton { display: flex; gap: 6px; }
+.con-boton input { flex: 1; min-width: 0; }
+.con-boton button { flex: none; padding: 6px 10px; }
 .estilo-cab { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .chips button { font-size: .82rem; padding: 4px 10px; min-height: 32px; border-radius: 16px; }
@@ -198,7 +205,31 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 
       <fieldset>
         <legend>Capas del personaje (solo las lee el servidor)</legend>
-        <div class="campo ancho"><label for="f_identificacion">Datos de identificación</label><textarea id="f_identificacion" rows="6"></textarea><span class="ayuda">RUT, nacimiento, domicilio sin número, previsión, escolaridad, ocupación, contacto. Todo ficticio.</span></div>
+        <div class="campo ancho" role="group" aria-labelledby="tituloIdent">
+          <span class="label-campo" id="tituloIdent">Datos de identificación</span>
+          <span class="ayuda">Todo ficticio. El RUT se toma del campo de arriba. El domicilio va sin número.</span>
+          <textarea id="f_identificacion" hidden></textarea>
+          <div class="ident">
+            <div class="campo doble"><label for="id_nacimiento">Fecha de nacimiento</label>
+              <div class="con-boton"><input type="text" id="id_nacimiento" placeholder="ej. 14 de marzo de 1973"><button type="button" id="btnNacimiento" title="Calcula una fecha que calce con la edad">Según edad</button></div></div>
+            <div class="campo"><label for="id_calle">Calle o pasaje (sin número)</label><input type="text" id="id_calle" placeholder="ej. Pasaje Los Aromos (ficticio)"></div>
+            <div class="campo"><label for="id_comuna">Comuna</label><input type="text" id="id_comuna" list="lista_comunas" placeholder="ej. Puente Alto"></div>
+            <div class="campo"><label for="id_prevision">Previsión</label><input type="text" id="id_prevision" list="lista_prevision" placeholder="ej. FONASA, tramo B"></div>
+            <div class="campo"><label for="id_escolaridad">Escolaridad</label><input type="text" id="id_escolaridad" list="lista_escolaridad" placeholder="ej. Enseñanza media completa"></div>
+            <div class="campo"><label for="id_ocupacion">Ocupación</label><input type="text" id="id_ocupacion" list="lista_ocupacion" placeholder="ej. Vendedora en una tienda"></div>
+            <div class="campo"><label for="id_civil">Estado civil</label><input type="text" id="id_civil" list="lista_civil" placeholder="ej. Casada"></div>
+            <div class="campo"><label for="id_vive">Vive con</label><input type="text" id="id_vive" placeholder="ej. Con su marido y su hija menor"></div>
+            <div class="campo"><label for="id_contacto">Contacto de emergencia</label><input type="text" id="id_contacto" placeholder="ej. Su marido, Jorge"></div>
+            <div class="campo"><label for="id_religion">Religión o creencias</label><input type="text" id="id_religion" list="lista_religion" placeholder="ej. No refiere"></div>
+            <div class="campo ancho"><label for="id_otros">Otros datos (opcional)</label><textarea id="id_otros" rows="2" placeholder="ej. Nacionalidad, idioma, pueblo originario"></textarea></div>
+          </div>
+          <datalist id="lista_comunas"><option>Santiago</option><option>Puente Alto</option><option>Maipú</option><option>La Florida</option><option>Las Condes</option><option>Ñuñoa</option><option>Providencia</option><option>San Bernardo</option><option>Peñalolén</option><option>La Pintana</option><option>Estación Central</option><option>Recoleta</option><option>Independencia</option><option>Quilicura</option><option>Pudahuel</option><option>La Reina</option><option>Concepción</option><option>Valdivia</option><option>Puerto Montt</option><option>Viña del Mar</option></datalist>
+          <datalist id="lista_prevision"><option>FONASA, tramo A</option><option>FONASA, tramo B</option><option>FONASA, tramo C</option><option>FONASA, tramo D</option><option>ISAPRE</option><option>PRAIS</option><option>Sin previsión</option></datalist>
+          <datalist id="lista_escolaridad"><option>Enseñanza básica incompleta</option><option>Enseñanza básica completa</option><option>Enseñanza media incompleta</option><option>Enseñanza media completa</option><option>Cursando enseñanza media</option><option>Técnico de nivel superior</option><option>Universitaria incompleta</option><option>Universitaria completa</option></datalist>
+          <datalist id="lista_ocupacion"><option>Estudiante</option><option>Dueña de casa</option><option>Trabajadora independiente</option><option>Vendedora</option><option>Cajera de supermercado</option><option>Auxiliar de aseo</option><option>Cesante</option><option>Jubilada</option></datalist>
+          <datalist id="lista_civil"></datalist>
+          <datalist id="lista_religion"><option>No refiere</option><option>Católica</option><option>Evangélica</option><option>Ninguna</option><option>Testigo de Jehová</option></datalist>
+        </div>
         <div class="campo ancho"><label for="f_identidad">Identidad</label><textarea id="f_identidad" rows="3"></textarea></div>
         <div class="campo ancho"><label for="f_guion_clinico">Cómo parte la consulta</label><textarea id="f_guion_clinico" rows="3"></textarea></div>
         <div class="campo ancho"><label for="f_info_condicionada">Lo que cuenta solo si se lo preguntan</label><textarea id="f_info_condicionada" rows="9"></textarea><span class="ayuda">Incluye la información clave y bajo qué condición la revela.</span></div>
@@ -234,7 +265,17 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 
       <fieldset>
         <legend>Cierre e hitos</legend>
-        <div class="campo ancho"><label for="f_cierre">Cierre de la entrevista</label><textarea id="f_cierre" rows="5"></textarea><span class="ayuda">Pregunta pendiente (la hace si nadie se la respondió), preocupación oculta (solo si le preguntan «¿algo más?») y despedida.</span></div>
+        <div class="campo ancho" role="group" aria-labelledby="tituloCierre">
+          <span class="label-campo" id="tituloCierre">Cierre de la entrevista</span>
+          <span class="ayuda">El personaje sigue este orden: cuando le resumen o le explican qué viene, hace su pregunta pendiente; si le preguntan «¿hay algo más que le preocupe?», cuenta su preocupación oculta; y cuando se despiden, se despide con una frase.</span>
+          <textarea id="f_cierre" hidden></textarea>
+          <div class="ident">
+            <div class="campo ancho"><label for="ci_pregunta">1. Pregunta pendiente</label><input type="text" id="ci_pregunta" placeholder="ej. ¿Tengo que dejar las hormonas?"><span class="ayuda">La hace solo si nadie se la respondió durante la entrevista.</span></div>
+            <div class="campo ancho"><label for="ci_oculta">2. Preocupación oculta</label><textarea id="ci_oculta" rows="2" placeholder="ej. Le da miedo que la operen; la vez anterior lo pasó sola."></textarea><span class="ayuda">Solo la cuenta si le preguntan si hay algo más que le preocupe.</span></div>
+            <div class="campo ancho"><label for="ci_despedida">3. Despedida</label><input type="text" id="ci_despedida" placeholder="ej. Agradece en voz baja: «gracias por explicarme con calma»."></div>
+            <div class="campo ancho"><label for="ci_otros">Otras indicaciones para el cierre (opcional)</label><textarea id="ci_otros" rows="2"></textarea></div>
+          </div>
+        </div>
         <div class="campo ancho"><label for="f_hitos">Hitos del caso</label><textarea id="f_hitos" rows="7"></textarea><span class="ayuda">Lo que el estudiante debería descubrir o hacer, uno por línea. El personaje no los ve; la retroalimentación marca cada uno como logrado, en parte o pendiente.</span></div>
       </fieldset>
 
@@ -326,6 +367,7 @@ function abrir(c) {
   $("f_frase").value = c ? fraseDe(c) : "Hola, buenas tardes.";
   pintarFocos();
   pintarEstilo(c && c.estilo);
+  pintarIdentificacion(); pintarCierre();
   sincronizarListaVoz();
   for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && Boolean(c));
   $("f_frase").disabled = false; $("f_voz_lista").disabled = !editable && false;
@@ -468,6 +510,7 @@ $("formActividad").addEventListener("submit", async e => {
 /* Guardar */
 $("editor").addEventListener("submit", async e => {
   e.preventDefault();
+  componerIdentificacion(); componerCierre();
   const datos = {};
   for (const k of CAMPOS) { const el = $("f_" + k); if (el) datos[k] = el.type === "checkbox" ? el.checked : el.value; }
   datos.carreras = String(datos.carreras || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -485,6 +528,75 @@ $("editor").addEventListener("submit", async e => {
   } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; }
   finally { $("btnGuardar").disabled = !editable; }
 });
+
+/* Datos de identificación y cierre: formularios que se guardan como texto con una línea por dato */
+const IDENT = [["id_nacimiento", "Fecha de nacimiento"], ["domicilio", "Domicilio"], ["id_prevision", "Previsión"], ["id_escolaridad", "Escolaridad"],
+  ["id_ocupacion", "Ocupación"], ["id_civil", "Estado civil"], ["id_vive", "Vive"], ["id_contacto", "Contacto de emergencia"], ["id_religion", "Religión o creencias"]];
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+function pintarIdentificacion() {
+  const texto = $("f_identificacion").value, otros = [];
+  for (const [id] of IDENT) if (id !== "domicilio") $(id).value = "";
+  $("id_calle").value = ""; $("id_comuna").value = "";
+  for (const linea of texto.split("\n")) {
+    const m = linea.match(/^\s*([^:]+):\s*(.*)$/);
+    const clave = m && m[1].trim().toLowerCase(), valor = m ? m[2].trim() : linea.trim();
+    if (!valor && !clave) continue;
+    if (clave === "rut") continue;
+    if (clave && clave.startsWith("domicilio")) {
+      const i = valor.lastIndexOf(",");
+      $("id_calle").value = i >= 0 ? valor.slice(0, i).trim() : valor; $("id_comuna").value = i >= 0 ? valor.slice(i + 1).trim() : "";
+      continue;
+    }
+    const campo = IDENT.find(([, nombre]) => clave && (clave === nombre.toLowerCase() || (clave.startsWith("religi") && nombre.startsWith("Religi")) || (clave.startsWith("vive") && nombre === "Vive")));
+    if (campo && campo[0] !== "domicilio") $(campo[0]).value = valor; else if (linea.trim()) otros.push(linea.trim());
+  }
+  $("id_otros").value = otros.join("\n");
+  sugerirEstadoCivil();
+}
+function componerIdentificacion() {
+  const l = [];
+  const rut = $("f_rut").value.trim(); if (rut) l.push(`RUT: ${rut} (ficticio)`);
+  for (const [id, nombre] of IDENT) {
+    const v = id === "domicilio" ? [$("id_calle").value.trim(), $("id_comuna").value.trim()].filter(Boolean).join(", ") : $(id).value.trim();
+    if (v) l.push(`${nombre}: ${v}`);
+  }
+  const otros = $("id_otros").value.trim(); if (otros) l.push(otros);
+  $("f_identificacion").value = l.join("\n");
+}
+function sugerirEstadoCivil() {
+  const f = $("f_sexo").value !== "masculino";
+  $("lista_civil").innerHTML = (f ? ["Soltera", "Casada", "Conviviente", "Separada", "Divorciada", "Viuda"] : ["Soltero", "Casado", "Conviviente", "Separado", "Divorciado", "Viudo"]).map(x => `<option>${x}</option>`).join("");
+}
+$("btnNacimiento").onclick = () => {
+  const edad = parseInt($("f_edad").value, 10);
+  if (!edad) { $("f_edad").focus(); return; }
+  const hoy = new Date(), mes = Math.floor(Math.random() * 12), dia = 1 + Math.floor(Math.random() * 28);
+  const yaCumplio = mes < hoy.getMonth() || (mes === hoy.getMonth() && dia <= hoy.getDate());
+  const anio = hoy.getFullYear() - edad - (yaCumplio ? 0 : 1);
+  $("id_nacimiento").value = `${dia} de ${MESES[mes]} de ${anio}`; componerIdentificacion(); cambios = true;
+};
+for (const id of ["id_nacimiento", "id_calle", "id_comuna", "id_prevision", "id_escolaridad", "id_ocupacion", "id_civil", "id_vive", "id_contacto", "id_religion", "id_otros", "f_rut"])
+  $(id).addEventListener("input", componerIdentificacion);
+$("f_sexo").addEventListener("change", sugerirEstadoCivil);
+
+const CIERRE = [["ci_pregunta", "Pregunta pendiente"], ["ci_oculta", "Preocupación oculta"], ["ci_despedida", "Despedida"]];
+function pintarCierre() {
+  const otros = [];
+  for (const [id] of CIERRE) $(id).value = "";
+  for (const linea of $("f_cierre").value.split("\n")) {
+    const m = linea.match(/^\s*-?\s*(Pregunta pendiente|Preocupación oculta|Despedida)\s*:\s*(.*)$/i);
+    if (m) { const c = CIERRE.find(([, n]) => n.toLowerCase() === m[1].toLowerCase()); $(c[0]).value = m[2].trim(); }
+    else if (linea.trim()) otros.push(linea.trim().replace(/^-\s*/, ""));
+  }
+  $("ci_otros").value = otros.join("\n");
+}
+function componerCierre() {
+  const l = [];
+  for (const [id, nombre] of CIERRE) { const v = $(id).value.trim(); if (v) l.push(`- ${nombre}: ${v}`); }
+  for (const o of $("ci_otros").value.split("\n")) if (o.trim()) l.push("- " + o.trim().replace(/^-\s*/, ""));
+  $("f_cierre").value = l.join("\n");
+}
+for (const id of ["ci_pregunta", "ci_oculta", "ci_despedida", "ci_otros"]) $(id).addEventListener("input", componerCierre);
 
 /* Estilo de respuesta: opciones que se traducen en instrucciones para la paciente */
 const ESTILO_TXT = {

@@ -63,10 +63,12 @@ ${textoEstilo(c.estilo)}HOY, EN ESTA ENTREVISTA
 - ${el ? matiz.replace("agitada", "agitado").replace("cansada", "cansado").replace("nerviosa", "nervioso").replace("desorientada", "desorientado").replace("tranquila", "tranquilo").replace("tímida", "tímido").replace("distraída", "distraído") : matiz} Que se note solo un poco, sin inventar datos clínicos.
 - En tu primera respuesta, ${saludo}. No repitas la frase de inicio del guion palabra por palabra: di la idea con tus palabras y a tu ritmo.
 
-MOMENTOS DE LA ENTREVISTA (no los nombres)
-- Cierre: si te resumen, te preguntan si tienes dudas o anuncian que terminan, haz tu pregunta pendiente si nadie te la respondió.
-- Tu preocupación oculta solo la cuentas si te preguntan algo como "¿hay algo más que le preocupe?". Si se despiden sin preguntarlo, te vas sin contarla.
-- Si se despiden, despídete con una frase corta y no sigas.
+CIERRE DE LA ENTREVISTA (síguelo en este orden, sin nombrar los pasos)
+1. Cuando quien te entrevista resuma, te explique qué viene ahora, te pregunte si tienes dudas o diga que van terminando, haz tu pregunta pendiente (una sola vez) si nadie la ha respondido. Si ya está respondida, no inventes otras preguntas.
+2. Si te preguntan si hay algo más que te preocupe, o algo parecido, cuenta tu preocupación oculta. Si no te lo preguntan, no la cuentes.
+3. Cuando se despidan o digan que terminaron, despídete con tu despedida en una sola frase. No agregues nada más ni abras temas nuevos.
+- Durante el cierre ayuda a terminar: respuestas cortas, sin repetir información ni hacer más de una pregunta por vez. No alargues la conversación.
+- Si después de despedirte te siguen hablando, responde con una frase muy breve y vuelve a despedirte.
 
 SI TE PREGUNTAN ALGO QUE EL GUION NO DICE
 - Datos personales (gustos, familia, rutina): improvisa con coherencia. Datos clínicos (alergias, cirugías, remedios, síntomas): responde en negativo o normal ("no", "no que yo sepa"). Mantén igual lo improvisado.
