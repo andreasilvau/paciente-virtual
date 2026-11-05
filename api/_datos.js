@@ -129,6 +129,11 @@ export async function guardarActividad(a) {
   cacheAct = null;
   return Array.isArray(r) ? r[0] : r;
 }
+export async function borrarCaso(id) {
+  if (!supabaseConfigurado) throw new Error("Para borrar personajes falta configurar Supabase en Vercel.");
+  await pedirSupabase("casos?id=eq." + encodeURIComponent(String(id || "").trim().toLowerCase()), { method: "DELETE" });
+  olvidarCache();
+}
 export async function borrarActividad(codigo) {
   await pedirSupabase("actividades?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "DELETE" });
   cacheAct = null;

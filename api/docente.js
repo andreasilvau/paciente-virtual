@@ -1,7 +1,7 @@
 // Página de docente: ver y editar personajes, listar voces de ElevenLabs y probarlas.
 // Protegida con DOCENTE_CODE (distinto del código de los estudiantes).
 import { error } from "./_lib.js";
-import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS } from "./_datos.js";
+import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso } from "./_datos.js";
 import { sintetizar } from "./hablar.js";
 
 function verificarDocente(request) {
@@ -73,6 +73,9 @@ export async function POST(request) {
     try {
       return Response.json({ actividad: await guardarActividad({ codigo, nombre: String(body.nombre || "").slice(0, 120), guia, activa: body.activa !== false }) });
     } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "borrarCaso") {
+    try { await borrarCaso(body.id); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
   }
   if (body.accion === "borrarActividad") {
     try { await borrarActividad(body.codigo); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }

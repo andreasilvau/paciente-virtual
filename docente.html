@@ -72,6 +72,8 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .barra { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 #estadoGuardado { color: var(--muted); }
 #estadoGuardado.ok { color: var(--ok); font-weight: 700; }
+.peligro { color: var(--rec); border-color: color-mix(in srgb, var(--rec) 45%, var(--line)); }
+.peligro:hover:not(:disabled) { background: color-mix(in srgb, var(--rec) 10%, transparent); }
 #estadoGuardado.err { color: var(--rec); font-weight: 700; }
 .actividades { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .actividad { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(210px, 1.4fr) auto auto auto; gap: 10px 14px; align-items: center; }
@@ -198,6 +200,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 
       <div class="barra">
         <button class="primario" type="submit" id="btnGuardar">Guardar cambios</button>
+        <button type="button" id="btnBorrar" class="peligro">Borrar personaje</button>
         <span id="estadoGuardado" role="status"></span>
       </div>
     </form>
@@ -256,6 +259,7 @@ function pintarLista() {
 function abrir(c) {
   $("editor").hidden = false; $("vistaActividades").hidden = true; $("btnActividades").setAttribute("aria-current", "false");
   nuevo = !c; actual = c || null; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
+  $("btnBorrar").hidden = nuevo; $("btnBorrar").disabled = !editable;
   $("f_id").value = c ? c.id : ""; $("f_id").disabled = Boolean(c);
   for (const k of CAMPOS) {
     const el = $("f_" + k); if (!el) continue;
@@ -422,6 +426,22 @@ $("editor").addEventListener("submit", async e => {
   } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; }
   finally { $("btnGuardar").disabled = !editable; }
 });
+
+/* Borrar */
+$("btnBorrar").onclick = async () => {
+  if (!actual) return;
+  const ok = confirm(`¿Borrar a ${actual.nombre} para siempre?\n\nSe pierden su guion, hitos y voz, y no se puede deshacer.\nSi solo quieres que los estudiantes no lo vean, cancela y desmarca «Visible para estudiantes».`);
+  if (!ok) return;
+  $("btnBorrar").disabled = true; $("estadoGuardado").textContent = "Borrando…"; $("estadoGuardado").className = "";
+  try {
+    await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "borrarCaso", id: actual.id }) });
+    const nombre = actual.nombre;
+    casos = casos.filter(c => c.id !== actual.id);
+    cambios = false;
+    if (casos.length) abrir(casos[0]); else abrir(null);
+    $("estadoGuardado").textContent = `${nombre} fue borrado.`; $("estadoGuardado").className = "ok";
+  } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; $("btnBorrar").disabled = !editable; }
+};
 
 // El código solo llega una vez desde la pestaña Docente del inicio; no queda guardado.
 codigo = leer("docente") || "";
