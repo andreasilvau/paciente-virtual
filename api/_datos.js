@@ -138,3 +138,26 @@ export async function borrarActividad(codigo) {
   await pedirSupabase("actividades?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "DELETE" });
   cacheAct = null;
 }
+
+// Diccionario de pronunciación: cómo debe decir la voz ciertas palabras (solo cambia el audio, no el texto escrito).
+// "dice" vacío = no se lee (por ejemplo, risas escritas como "je").
+let cachePron = null, horaPron = 0;
+export async function listarPronunciacion() {
+  if (!supabaseConfigurado) return [];
+  if (cachePron && Date.now() - horaPron < VIGENCIA_MS) return cachePron;
+  cachePron = await pedirSupabase("pronunciacion?select=escrito,dice&order=escrito.asc"); horaPron = Date.now();
+  return cachePron;
+}
+export async function guardarPronunciacion(lista) {
+  if (!supabaseConfigurado) throw new Error("Para guardar la pronunciación falta configurar Supabase en Vercel.");
+  const filas = [], vistos = new Set();
+  for (const f of lista || []) {
+    const escrito = String(f.escrito || "").trim().slice(0, 60), dice = String(f.dice || "").trim().slice(0, 120);
+    if (!escrito || vistos.has(escrito.toLowerCase())) continue;
+    vistos.add(escrito.toLowerCase()); filas.push({ escrito, dice });
+  }
+  await pedirSupabase("pronunciacion?escrito=not.is.null", { method: "DELETE" });
+  if (filas.length) await pedirSupabase("pronunciacion", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(filas) });
+  cachePron = null;
+  return filas;
+}

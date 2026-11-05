@@ -75,6 +75,8 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .peligro { color: var(--rec); border-color: color-mix(in srgb, var(--rec) 45%, var(--line)); }
 .peligro:hover:not(:disabled) { background: color-mix(in srgb, var(--rec) 10%, transparent); }
 #estadoGuardado.err { color: var(--rec); font-weight: 700; }
+.pron-fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 10px; align-items: center; }
+.pron-cab { font-weight: 700; font-size: .9rem; color: var(--muted); }
 .actividades { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .actividad { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(210px, 1.4fr) auto auto auto; gap: 10px 14px; align-items: center; }
 .actividad .cod { font: 700 1.05rem/1.2 var(--display); }
@@ -103,6 +105,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       <div id="lista" style="display:flex;flex-direction:column;gap:6px"></div>
       <button type="button" id="btnNuevo">+ Nuevo personaje</button>
       <button type="button" id="btnActividades" class="item" style="margin-top:12px"><b>Actividades y guía</b><small>Códigos para tus clases</small></button>
+      <button type="button" id="btnPronunciacion" class="item"><b>Pronunciación</b><small>Cómo dice la voz ciertas palabras</small></button>
       <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
     </nav>
 
@@ -120,6 +123,28 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       </form>
       <div id="listaActividades" style="display:flex;flex-direction:column;gap:10px"></div>
       <p id="estadoAct" role="status" class="ayuda"></p>
+    </section>
+
+    <section id="vistaPronunciacion" class="actividades" hidden aria-labelledby="tituloPron">
+      <div class="caja" style="display:flex;flex-direction:column;gap:8px">
+        <h2 id="tituloPron">Pronunciación</h2>
+        <p>Indica cómo debe decir la voz algunas palabras o siglas. Solo cambia lo que se escucha: en la transcripción el texto queda igual. Vale para todos los personajes.</p>
+        <p class="ayuda">Deja «Se dice así» vacío para que la voz no lo lea (por ejemplo, risas escritas como «je»). Se reconoce la palabra completa, sin importar mayúsculas.</p>
+      </div>
+      <div class="caja" style="display:flex;flex-direction:column;gap:10px">
+        <div class="pron-fila pron-cab" aria-hidden="true"><span>Escrito</span><span>Se dice así</span><span></span></div>
+        <div id="listaPron" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" id="btnAgregarPron">+ Agregar palabra</button>
+          <button type="button" class="primario" id="btnGuardarPron">Guardar pronunciación</button>
+        </div>
+        <p id="estadoPron" role="status" class="ayuda"></p>
+      </div>
+      <div class="caja" style="display:flex;flex-direction:column;gap:8px">
+        <label for="fraseProbarPron" style="font-weight:700">Probar una frase</label>
+        <input type="text" id="fraseProbarPron" value="Je, ¿y el PAP salió bien?">
+        <div><button type="button" id="btnProbarPron">Escuchar con la voz de un personaje</button> <span class="ayuda">Guarda antes de probar para escuchar los cambios.</span></div>
+      </div>
     </section>
 
     <form id="editor" autocomplete="off">
@@ -257,7 +282,8 @@ function pintarLista() {
 }
 
 function abrir(c) {
-  $("editor").hidden = false; $("vistaActividades").hidden = true; $("btnActividades").setAttribute("aria-current", "false");
+  $("editor").hidden = false; $("vistaActividades").hidden = true; $("vistaPronunciacion").hidden = true;
+  $("btnActividades").setAttribute("aria-current", "false"); $("btnPronunciacion").setAttribute("aria-current", "false");
   nuevo = !c; actual = c || null; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
   $("btnBorrar").hidden = nuevo; $("btnBorrar").disabled = !editable;
   $("f_id").value = c ? c.id : ""; $("f_id").disabled = Boolean(c);
@@ -352,7 +378,8 @@ let actividades = [];
 $("btnActividades").onclick = async () => {
   if (cambios && !confirm("Tienes cambios sin guardar. ¿Ir a actividades igual?")) return;
   cambios = false; actual = null; nuevo = false; pintarLista();
-  $("editor").hidden = true; $("vistaActividades").hidden = false; $("btnActividades").setAttribute("aria-current", "true");
+  $("editor").hidden = true; $("vistaActividades").hidden = false; $("vistaPronunciacion").hidden = true;
+  $("btnActividades").setAttribute("aria-current", "true"); $("btnPronunciacion").setAttribute("aria-current", "false");
   if (!$("a_codigo").value) $("a_codigo").value = "box-" + Math.floor(1000 + Math.random() * 9000);
   await cargarActividades();
 };
@@ -426,6 +453,48 @@ $("editor").addEventListener("submit", async e => {
   } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; }
   finally { $("btnGuardar").disabled = !editable; }
 });
+
+/* Pronunciación: diccionario que se aplica a la voz de todos los personajes */
+function filaPron(escrito = "", dice = "") {
+  const f = document.createElement("div"); f.className = "pron-fila";
+  const a = document.createElement("input"); a.type = "text"; a.value = escrito; a.placeholder = "ej. PAP"; a.setAttribute("aria-label", "Escrito");
+  const b = document.createElement("input"); b.type = "text"; b.value = dice; b.placeholder = "vacío = no se lee"; b.setAttribute("aria-label", "Se dice así");
+  const x = document.createElement("button"); x.type = "button"; x.textContent = "Quitar"; x.onclick = () => f.remove();
+  f.append(a, b, x); $("listaPron").append(f);
+  return a;
+}
+$("btnPronunciacion").onclick = async () => {
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Ir a pronunciación igual?")) return;
+  cambios = false; actual = null; nuevo = false; pintarLista();
+  $("editor").hidden = true; $("vistaActividades").hidden = true; $("vistaPronunciacion").hidden = false;
+  $("btnPronunciacion").setAttribute("aria-current", "true"); $("btnActividades").setAttribute("aria-current", "false");
+  $("estadoPron").textContent = "Cargando…"; $("listaPron").textContent = "";
+  try {
+    const d = await (await api("/api/docente?pronunciacion=1")).json();
+    for (const p of d.lista || []) filaPron(p.escrito, p.dice);
+    if (!(d.lista || []).length) filaPron();
+    $("estadoPron").textContent = "";
+  } catch (e) { $("estadoPron").textContent = e.message; }
+};
+$("btnAgregarPron").onclick = () => filaPron().focus();
+$("btnGuardarPron").onclick = async () => {
+  const lista = [...document.querySelectorAll("#listaPron .pron-fila")].map(f => { const [a, b] = f.querySelectorAll("input"); return { escrito: a.value.trim(), dice: b.value.trim() }; }).filter(p => p.escrito);
+  $("btnGuardarPron").disabled = true; $("estadoPron").textContent = "Guardando…";
+  try {
+    await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "pronunciacion", lista }) });
+    $("estadoPron").textContent = "Guardado. La voz lo usará en unos minutos.";
+  } catch (e) { $("estadoPron").textContent = e.message; }
+  finally { $("btnGuardarPron").disabled = false; }
+};
+$("btnProbarPron").onclick = async () => {
+  const caso = casos.find(c => c.activo) || casos[0];
+  $("estadoPron").textContent = "Generando audio…";
+  try {
+    const r = await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "probar", caso: caso && caso.id, voz_id: caso && caso.voz_id, texto: $("fraseProbarPron").value }) });
+    const url = URL.createObjectURL(await r.blob()); const a = new Audio(url); a.onended = () => URL.revokeObjectURL(url); await a.play();
+    $("estadoPron").textContent = caso ? `Con la voz de ${caso.nombre}.` : "";
+  } catch (e) { $("estadoPron").textContent = e.message; }
+};
 
 /* Borrar */
 $("btnBorrar").onclick = async () => {

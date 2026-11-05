@@ -1,7 +1,7 @@
 // Convierte la respuesta de la paciente en voz.
 // Si existe ELEVENLABS_API_KEY usa ElevenLabs; si no, usa Azure Speech con voz chilena.
 import { error, escaparXml, verificarAcceso } from "./_lib.js";
-import { buscarCaso } from "./_datos.js";
+import { buscarCaso, listarPronunciacion } from "./_datos.js";
 
 const AUDIO = { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" };
 
@@ -125,7 +125,29 @@ export async function GET(request) {
 }
 
 // Convierte texto en audio con la voz del personaje (o con una voz forzada, para que la docente pruebe voces).
+// Aplica el diccionario de pronunciación de la docente: palabra completa, sin importar mayúsculas.
+export async function aplicarPronunciacion(texto) {
+  let lista = [];
+  try { lista = await listarPronunciacion(); } catch { lista = []; }
+  for (const { escrito, dice } of lista) {
+    const patron = escrito.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    texto = texto.replace(new RegExp(`(?<![\\p{L}\\p{N}])${patron}(?![\\p{L}\\p{N}])`, "giu"), dice);
+  }
+  // Ordena lo que quede tras quitar palabras: espacios dobles y signos sueltos.
+  return texto.replace(/\s+([,.!?…])/g, "$1").replace(/([¿¡])\s+/g, "$1").replace(/(^|[\s¿¡])[,.]+/g, "$1").replace(/,+([.!?…])/g, "$1").replace(/\.{4,}/g, "...").replace(/\s{2,}/g, " ").trim();
+}
+// Un instante de silencio, para cuando no queda nada que decir (por ejemplo, una respuesta que era solo "je").
+function silencio() {
+  const b = Buffer.alloc(44 + 1600), n = 1600;
+  b.write("RIFF", 0); b.writeUInt32LE(36 + n, 4); b.write("WAVE", 8); b.write("fmt ", 12); b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(8000, 24); b.writeUInt32LE(16000, 28);
+  b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write("data", 36); b.writeUInt32LE(n, 40);
+  return new Response(b, { headers: { "Content-Type": "audio/wav", "Cache-Control": "no-store" } });
+}
+
 export async function sintetizar(texto, casoId, forzada) {
+  texto = await aplicarPronunciacion(texto);
+  if (!/[\p{L}\p{N}]/u.test(texto)) return silencio();
   let caso = null;
   try { caso = casoId ? await buscarCaso(String(casoId)) : null; } catch { caso = null; }
   return process.env.ELEVENLABS_API_KEY ? conElevenLabs(texto, caso, forzada) : conAzure(texto, caso, forzada);
