@@ -99,7 +99,10 @@ En cada uno de los cuatro primeros apartados cita una intervención concreta de 
 
 Hitos que la estudiante debía lograr:
 ${(c.hitos || "").trim() || "(sin hitos definidos: omite ese apartado)"}
-
+${(c.rubrica || "").trim() ? `
+Criterios de la rúbrica docente propios de este caso (considéralos al escribir los apartados; no pongas puntaje):
+${c.rubrica.trim()}
+` : ""}
 Lo que ${elP} sabía y podía contar (guion):
 ${guionCompleto(c)}`;
 }
