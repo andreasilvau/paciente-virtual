@@ -100,7 +100,7 @@ export async function POST(request) {
       const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
       const texto = await preguntarAClaude(MODELO_FEEDBACK, reglasRubrica(caso),
         [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 6000);
-      try { return Response.json({ rubrica: calcularRubrica(texto) }); }
+      try { return Response.json({ rubrica: calcularRubrica(texto, caso.rubrica_na) }); }
       catch (e) { console.error("Rúbrica", e.message, texto.slice(0, 300)); return error(502, "No se pudo calcular la rúbrica. Vuelve a intentarlo."); }
     }
     if (body.modo === "feedback") {

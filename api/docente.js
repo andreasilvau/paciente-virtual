@@ -1,6 +1,7 @@
 // Página de docente: ver y editar personajes, listar voces de ElevenLabs y probarlas.
 // Protegida con DOCENTE_CODE (distinto del código de los estudiantes).
 import { error } from "./_lib.js";
+import { PARTE_A, PARTE_B } from "./_rubrica.js";
 import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion } from "./_datos.js";
 import { sintetizar } from "./hablar.js";
 
@@ -29,6 +30,7 @@ export async function GET(request) {
   try {
     const q = new URL(request.url).searchParams;
     if (q.get("voces")) return Response.json({ voces: await vocesElevenLabs() });
+    if (q.get("rubrica")) return Response.json({ parteA: PARTE_A, parteB: PARTE_B });
     if (q.get("pronunciacion")) return Response.json({ lista: await listarPronunciacion() });
     if (q.get("actividades")) return Response.json({ actividades: await listarActividades(), editable: supabaseConfigurado });
     return Response.json({ casos: await listarCasos({ incluirInactivos: true }), editable: supabaseConfigurado });
@@ -46,6 +48,7 @@ function limpiar(datos) {
     else if (k === "activo") v = Boolean(v);
     else if (k === "carreras") v = (Array.isArray(v) ? v : String(v || "").split(",")).map(x => String(x).trim()).filter(Boolean).slice(0, 20);
     else if (k === "voz_id") v = String(v || "").trim() || null;
+    else if (k === "rubrica_na") v = (Array.isArray(v) ? v : []).map(x => String(x).toUpperCase()).filter(x => /^B([1-9]|1[0-8])$/.test(x));
     else if (k === "estilo") {
       // Solo las claves conocidas, como texto corto.
       const e = {};

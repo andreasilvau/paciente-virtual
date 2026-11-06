@@ -85,7 +85,7 @@ PARTE A — Comunicación clínica (CICAA adaptada a voz). Puntúa cada ítem:
 ${listaA}
 
 PARTE B — Contenido clínico (lista de cotejo general). Marca cada ítem:
-"SI" = la conducta está presente en la transcripción · "NO" = no está · "NA" = no corresponde a este caso (úsalo solo si el ítem no tiene sentido para este caso, no porque la estudiante no lo hizo).
+"SI" = la conducta está presente en la transcripción · "NO" = no está · "NA" = no corresponde a este caso. La docente definió qué ítems no aplican: ${(c.rubrica_na || []).length ? (c.rubrica_na || []).join(", ") + " (márcalos NA)" : "ninguno"}. No marques NA ningún otro ítem.
 ${listaB}
 
 Criterios:
@@ -108,7 +108,8 @@ ${guionCompleto(c)}`;
 }
 
 // Lee la respuesta del modelo y calcula los puntajes con las reglas de la rúbrica.
-export function calcularRubrica(texto) {
+export function calcularRubrica(texto, noAplican = []) {
+  const na = new Set((noAplican || []).map(x => String(x).toUpperCase()));
   const ini = texto.indexOf("{"), fin = texto.lastIndexOf("}");
   if (ini < 0 || fin < ini) throw new Error("La evaluación no llegó en el formato esperado.");
   const datos = JSON.parse(texto.slice(ini, fin + 1));
@@ -135,7 +136,9 @@ export function calcularRubrica(texto) {
     let o = 0, m = 0;
     const items = g.items.map(([id, peso, texto]) => {
       const x = porIdB.get(id) || {};
-      const r = ["SI", "SÍ", "NO", "NA"].includes(String(x.r).toUpperCase()) ? String(x.r).toUpperCase().replace("SÍ", "SI") : "NO";
+      // NA solo si la docente lo definió para este caso; así el denominador no depende de la IA.
+      let r = ["SI", "SÍ", "NO"].includes(String(x.r).toUpperCase()) ? String(x.r).toUpperCase().replace("SÍ", "SI") : "NO";
+      if (na.has(id)) r = "NA";
       if (r !== "NA") { m += peso; if (r === "SI") o += peso; }
       return { id, peso, texto, respuesta: r, evidencia: String(x.e || "").slice(0, 200) };
     });

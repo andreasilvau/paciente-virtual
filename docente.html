@@ -89,6 +89,14 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .dim { display: flex; flex-direction: column; gap: 16px; }
 .dim[hidden] { display: none; }
 @media (max-width: 760px) { .dim-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rub-panel summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 32px; }
+.rub-lista { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.rub-grupo { font-weight: 700; margin: 10px 0 2px; font-size: .92rem; }
+.rub-item { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: .9rem; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.rub-item .id { font-weight: 700; color: var(--muted); }
+.rub-item .peso { color: var(--muted); white-space: nowrap; }
+.rub-item label { display: flex; gap: 6px; align-items: center; white-space: nowrap; font-weight: 400; font-size: .85rem; color: var(--muted); }
+.rub-item.na { opacity: .6; }
 .estilo-cab { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .chips button { font-size: .82rem; padding: 4px 10px; min-height: 32px; border-radius: 16px; }
@@ -333,6 +341,19 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
         </div>
         </fieldset>
         <fieldset>
+          <legend>Rúbrica general (igual para todos los casos)</legend>
+          <p class="campo ancho ayuda">Se aplica automáticamente al final de cada entrevista y se informa por separado. Aquí puedes revisarla y marcar qué ítems de la Parte B no aplican a este caso (por ejemplo, FUR en una paciente en la menopausia): quedan como «NA» y no cuentan en el puntaje máximo.</p>
+          <details class="campo ancho rub-panel" open>
+            <summary>Parte A · Comunicación clínica (CICAA adaptada a voz) · 29 ítems, 0-1-2 o NP</summary>
+            <div id="listaParteA" class="rub-lista"><p class="ayuda">Cargando…</p></div>
+          </details>
+          <details class="campo ancho rub-panel" open>
+            <summary>Parte B · Contenido clínico · 18 ítems SÍ/NO ponderados (máx. 29 puntos)</summary>
+            <div id="listaParteB" class="rub-lista"><p class="ayuda">Cargando…</p></div>
+            <p class="ayuda" id="maxParteB" role="status"></p>
+          </details>
+        </fieldset>
+        <fieldset>
           <legend>Qué debe lograr la estudiante en este caso</legend>
         <div class="campo ancho"><label for="f_hitos">Hitos del caso</label><textarea id="f_hitos" rows="7"></textarea><span class="ayuda">Lo que el estudiante debería descubrir o hacer, uno por línea. El personaje no los ve; la retroalimentación marca cada uno como logrado, en parte o pendiente.</span></div>
           <div class="campo ancho"><label for="f_rubrica">Rúbrica docente: criterios propios del caso</label><textarea id="f_rubrica" rows="6" placeholder="ej. Pregunta por el uso de terapia hormonal y su indicación.&#10;Explica la derivación a la unidad de patología cervical en palabras simples."></textarea><span class="ayuda">Contenidos clínicos y comunicacionales específicos de este caso que la retroalimentación debe considerar, uno por línea. No llevan puntaje.</span></div>
@@ -378,7 +399,7 @@ async function cargar() {
     if (!editable) aviso("Estás viendo los personajes del archivo de respaldo. Para editarlos, configura SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel.");
     pintarLista();
     abrir(actual ? casos.find(c => c.id === actual.id) || casos[0] : casos[0]);
-    cargarVoces();
+    cargarVoces(); cargarRubrica();
   } catch (e) { aviso(e.message); }
 }
 
@@ -413,7 +434,7 @@ function abrir(c) {
   $("f_frase").value = c ? fraseDe(c) : "Hola, buenas tardes.";
   pintarFocos();
   pintarEstilo(c && c.estilo);
-  pintarIdentificacion(); pintarCierre();
+  pintarIdentificacion(); pintarCierre(); pintarNoAplican(c && c.rubrica_na);
   sincronizarListaVoz();
   for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && Boolean(c));
   $("f_frase").disabled = false; $("f_voz_lista").disabled = !editable && false;
@@ -561,6 +582,7 @@ $("editor").addEventListener("submit", async e => {
   for (const k of CAMPOS) { const el = $("f_" + k); if (el) datos[k] = el.type === "checkbox" ? el.checked : el.value; }
   datos.carreras = String(datos.carreras || "").split(",").map(s => s.trim()).filter(Boolean);
   datos.estilo = leerEstilo();
+  datos.rubrica_na = [...document.querySelectorAll("#listaParteB input[data-na]:checked")].map(x => x.dataset.na);
   const id = (nuevo ? $("f_id").value : actual.id).trim().toLowerCase();
   $("btnGuardar").disabled = true; $("estadoGuardado").textContent = "Guardando…"; $("estadoGuardado").className = "";
   try {
@@ -574,6 +596,48 @@ $("editor").addEventListener("submit", async e => {
   } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; }
   finally { $("btnGuardar").disabled = !editable; }
 });
+
+/* Rúbrica general: se muestra en la pestaña Evaluación; los ítems de la Parte B pueden marcarse «no aplica» por caso */
+let rubrica = null;
+async function cargarRubrica() {
+  try {
+    rubrica = await (await api("/api/docente?rubrica=1")).json();
+    const a = $("listaParteA"); a.textContent = "";
+    for (const g of rubrica.parteA) {
+      const t = document.createElement("p"); t.className = "rub-grupo"; t.textContent = g.grupo; a.append(t);
+      for (const [id, texto] of g.items) {
+        const f = document.createElement("div"); f.className = "rub-item";
+        f.innerHTML = '<span class="id"></span><span class="txt"></span><span class="peso">0 · 1 · 2</span>';
+        f.querySelector(".id").textContent = id; f.querySelector(".txt").textContent = texto; a.append(f);
+      }
+    }
+    const b = $("listaParteB"); b.textContent = "";
+    for (const g of rubrica.parteB) {
+      const t = document.createElement("p"); t.className = "rub-grupo"; t.textContent = g.grupo; b.append(t);
+      for (const [id, peso, texto] of g.items) {
+        const f = document.createElement("div"); f.className = "rub-item";
+        f.innerHTML = '<span class="id"></span><span class="txt"></span><label><input type="checkbox"> No aplica</label>';
+        f.querySelector(".id").textContent = id;
+        f.querySelector(".txt").textContent = `${texto} (${peso} ${peso === 1 ? "punto" : "puntos"})`;
+        const chk = f.querySelector("input"); chk.dataset.na = id; chk.dataset.peso = peso; chk.disabled = !editable;
+        chk.onchange = () => { cambios = true; f.classList.toggle("na", chk.checked); maximoParteB(); };
+        b.append(f);
+      }
+    }
+    pintarNoAplican(actual && actual.rubrica_na);
+  } catch (e) { $("listaParteA").textContent = e.message; $("listaParteB").textContent = ""; }
+}
+function pintarNoAplican(lista) {
+  const na = new Set(lista || []);
+  for (const chk of document.querySelectorAll("#listaParteB input[data-na]")) { chk.checked = na.has(chk.dataset.na); chk.closest(".rub-item").classList.toggle("na", chk.checked); }
+  maximoParteB();
+}
+function maximoParteB() {
+  const chks = [...document.querySelectorAll("#listaParteB input[data-na]")];
+  if (!chks.length) return;
+  const max = chks.filter(c => !c.checked).reduce((s, c) => s + Number(c.dataset.peso), 0), n = chks.filter(c => c.checked).length;
+  $("maxParteB").textContent = n ? `En este caso no aplican ${n} ${n === 1 ? "ítem" : "ítems"}: el puntaje máximo de la Parte B queda en ${max} puntos.` : "Aplican los 18 ítems: puntaje máximo 29 puntos.";
+}
 
 /* Pestañas de las cuatro dimensiones del personaje */
 const PESTANAS = ["clinica", "psicologica", "linguistica", "evaluacion"];
