@@ -2,6 +2,7 @@
 import { error, verificarAcceso } from "./_lib.js";
 import { buscarCaso } from "./_datos.js";
 import { reglasPaciente, reglasFeedback } from "./_reglas.js";
+import { reglasRubrica, calcularRubrica } from "./_rubrica.js";
 
 const MODELO_PACIENTE = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const MODELO_FEEDBACK = process.env.CLAUDE_MODEL_FEEDBACK || "claude-sonnet-5-5";
@@ -93,6 +94,15 @@ export async function POST(request) {
   try {
     const caso = await buscarCaso(String(body.caso || ""));
     if (!caso) return error(500, "No hay personajes activos.");
+    if (body.modo === "rubrica") {
+      // Aplica la rúbrica (Parte A CICAA y Parte B contenido clínico) y calcula los porcentajes de logro.
+      if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir la evaluación.");
+      const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
+      const texto = await preguntarAClaude(MODELO_FEEDBACK, reglasRubrica(caso),
+        [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 6000);
+      try { return Response.json({ rubrica: calcularRubrica(texto) }); }
+      catch (e) { console.error("Rúbrica", e.message, texto.slice(0, 300)); return error(502, "No se pudo calcular la rúbrica. Vuelve a intentarlo."); }
+    }
     if (body.modo === "feedback") {
       if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
       const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");

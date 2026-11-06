@@ -303,6 +303,30 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   .guia-caja { order: 4; }
   .transcripcion { order: 5; max-height: 70svh; }
 }
+/* Rúbrica */
+.rubrica { padding: 4px 18px 16px; border-top: 1px solid var(--line); margin-top: 8px; }
+.rubrica h2 { font: 700 1.15rem/1.2 var(--display); margin: 12px 0 4px; }
+.rubrica .partes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; margin-top: 10px; }
+.rubrica .parte { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface); }
+.rubrica h3 { font: 700 1rem/1.25 var(--display); margin: 0 0 4px; }
+.rubrica .total { margin: 0 0 10px; color: var(--muted); }
+.rubrica .total b { font: 700 1.6rem/1 var(--display); color: var(--ink); }
+.barra-grupo { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n v" "b b"; gap: 4px 8px; align-items: center; font-size: .9rem; margin: 8px 0; }
+.barra-grupo > span:first-child { grid-area: n; }
+.barra-grupo .pista { grid-area: b; }
+.barra-grupo .valor { grid-area: v; }
+.barra-grupo .pista { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.barra-grupo .pista i { display: block; height: 100%; border-radius: 4px; }
+.barra-grupo .valor { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 4.5em; text-align: right; }
+.rubrica details.items { margin-top: 10px; }
+.rubrica details.items summary { cursor: pointer; font-weight: 700; color: var(--accent); min-height: 32px; }
+.rubrica .grupo-items { font-weight: 700; margin: 10px 0 4px; font-size: .9rem; }
+.rubrica ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rubrica li { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; }
+.rubrica li small { display: block; color: var(--muted); font-style: italic; }
+.marca-item { flex: none; min-width: 2.2em; text-align: center; border-radius: 6px; font-weight: 700; font-size: .8rem; padding: 1px 4px; }
+.m-ok { background: var(--ok-bg); color: var(--accent); } .m-parte { background: var(--parte-bg); color: var(--warn); }
+.m-no { background: var(--pend-bg); color: var(--rec); } .m-na { background: var(--soft); color: var(--muted); }
 </style>
 </head>
 <body>
@@ -425,6 +449,11 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
           </div>
         </div>
         <div id="feedback"></div>
+        <section class="rubrica" id="rubricaRes" aria-labelledby="tituloRubrica" hidden>
+          <h2 id="tituloRubrica">Evaluación con la rúbrica</h2>
+          <p class="nota">Orientativa: la calcula la IA a partir de la transcripción. Parte A mide comunicación clínica (CICAA adaptada a voz) y Parte B, contenido clínico; se informan por separado.</p>
+          <div id="rubricaCuerpo" aria-live="polite"><p class="nota">Calculando la rúbrica…</p></div>
+        </section>
         <p class="nota" style="padding:0 14px 14px">Generada por IA a partir de la transcripción. Sirve para conversar en el debriefing; no reemplaza la rúbrica ni el juicio docente.</p>
         <div class="fb-acciones">
           <button type="button" class="primario" id="btnNuevaFb">Nueva entrevista</button>
@@ -1025,6 +1054,54 @@ function pintarFeedback(texto) {
 }
 function transcripcion() { return turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n"); }
 $("btnSugerenciaFeedback").onclick = () => $("btnFeedback").onclick();
+/* Rúbrica: Parte A (CICAA, 0-1-2/NP) y Parte B (lista de cotejo SÍ/NO ponderada) */
+const COLOR_GRUPO = { "Conectar": "var(--c-conectar)", "Identificar y comprender": "var(--c-identificar)", "Acordar y ayudar": "var(--c-acordar)" };
+function textoPct(v) { return v === null || v === undefined ? "—" : String(v).replace(".", ",") + " %"; }
+function pintarParte(titulo, parte, esA) {
+  const caja = document.createElement("div"); caja.className = "parte";
+  const h = document.createElement("h3"); h.textContent = titulo; caja.append(h);
+  const total = document.createElement("p"); total.className = "total";
+  total.innerHTML = `<b></b><span></span>`;
+  total.querySelector("b").textContent = textoPct(parte.logro);
+  total.querySelector("span").textContent = ` de logro · ${parte.obtenido} de ${parte.maximo} puntos`;
+  caja.append(total);
+  for (const g of parte.grupos) {
+    const fila = document.createElement("div"); fila.className = "barra-grupo";
+    const nombre = document.createElement("span"); nombre.textContent = g.grupo;
+    const pista = document.createElement("span"); pista.className = "pista"; pista.setAttribute("aria-hidden", "true");
+    const lleno = document.createElement("i"); lleno.style.width = (g.logro || 0) + "%"; lleno.style.background = (esA && COLOR_GRUPO[g.grupo]) || "var(--accent)";
+    pista.append(lleno);
+    const v = document.createElement("span"); v.className = "valor"; v.textContent = g.maximo ? textoPct(g.logro) : "No aplica";
+    fila.append(nombre, pista, v); caja.append(fila);
+  }
+  const det = document.createElement("details"); det.className = "items";
+  const sum = document.createElement("summary"); sum.textContent = "Ver cada ítem con su evidencia"; det.append(sum);
+  for (const g of parte.grupos) {
+    const t = document.createElement("p"); t.className = "grupo-items"; t.textContent = g.grupo; det.append(t);
+    const ul = document.createElement("ul");
+    for (const it of g.items) {
+      const li = document.createElement("li");
+      const valor = esA ? String(it.puntaje) : (it.respuesta === "SI" ? "Sí" : it.respuesta === "NO" ? "No" : "NA");
+      const marca = document.createElement("span");
+      marca.className = "marca-item " + (esA ? (it.puntaje === 2 ? "m-ok" : it.puntaje === 1 ? "m-parte" : it.puntaje === 0 ? "m-no" : "m-na") : (it.respuesta === "SI" ? "m-ok" : it.respuesta === "NO" ? "m-no" : "m-na"));
+      marca.textContent = valor;
+      const txt = document.createElement("span");
+      txt.textContent = `${it.id}. ${it.texto}${esA ? "" : ` (${it.peso} ${it.peso === 1 ? "punto" : "puntos"})`}`;
+      if (it.evidencia) { const ev = document.createElement("small"); ev.textContent = it.evidencia; txt.append(ev); }
+      li.append(marca, txt); ul.append(li);
+    }
+    det.append(ul);
+  }
+  caja.append(det);
+  return caja;
+}
+function pintarRubrica(r) {
+  const c = $("rubricaCuerpo"); c.textContent = "";
+  const grid = document.createElement("div"); grid.className = "partes";
+  grid.append(pintarParte("Parte A · Comunicación clínica (CICAA)", r.comunicacion, true), pintarParte("Parte B · Contenido clínico", r.contenido, false));
+  c.append(grid);
+}
+
 $("btnFeedback").onclick = async () => {
   $("sugerenciaCierre").hidden = true;
   if (ocupado) return;
@@ -1037,6 +1114,11 @@ $("btnFeedback").onclick = async () => {
   $("globoCierre").textContent = "Estoy revisando tu entrevista, dame unos segundos…";
   $("feedback").textContent = "";
   $("secFeedback").hidden = false; $("escenario").hidden = true;
+  // La rúbrica se calcula en paralelo con la retroalimentación escrita.
+  $("rubricaRes").hidden = false; $("rubricaCuerpo").innerHTML = '<p class="nota">Calculando la rúbrica…</p>';
+  api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnos, modo: "rubrica", caso: casoActual && casoActual.id }) })
+    .then(r => r.json()).then(d => pintarRubrica(d.rubrica))
+    .catch(e => { $("rubricaCuerpo").innerHTML = ""; const p = document.createElement("p"); p.className = "nota"; p.textContent = "No se pudo calcular la rúbrica: " + e.message; $("rubricaCuerpo").append(p); });
   $("secFeedback").scrollIntoView({ block: "nearest" });
   estado(true);
   try {
