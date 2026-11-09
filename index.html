@@ -809,7 +809,8 @@ function separarEmocion(texto) {
 
 /* Paciente con cuerpo (3D): solo los casos que tienen modelo. Se descarga al elegir el caso;
    si el dispositivo no puede mostrarla, queda el avatar simple sin avisos. */
-const MODELOS_3D = { patricia: "/modelos/patricia.glb" };
+// patricia.glb (MakeHuman) queda en /modelos como respaldo: para volver a él, cambia la ruta aquí.
+const MODELOS_3D = { patricia: "/modelos/patricia-avaturn.glb" };
 let paciente3d = null, modelo3d = "";
 function hayWebGL() {
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }

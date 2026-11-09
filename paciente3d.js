@@ -1,6 +1,8 @@
 /* Paciente 3D: cuerpo de la paciente con respiración, parpadeo, mirada y mandíbula sincronizada con su voz.
-   Modelo MakeHuman (esqueleto «default» con mandíbula y párpados). Se carga solo para los casos que tienen modelo;
-   si WebGL o el modelo fallan, la app sigue con el avatar circular. */
+   Acepta dos tipos de modelo:
+   - MakeHuman (esqueleto «default»): la cara se mueve con huesos (mandíbula, párpados, huesos faciales).
+   - Avaturn T2 / estilo Mixamo con blendshapes ARKit y visemes: la cara se mueve con formas (morph targets).
+   Se carga solo para los casos que tienen modelo; si WebGL o el modelo fallan, la app sigue con el avatar circular. */
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
@@ -38,31 +40,50 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
   const cuerpo = gltf.scene;
   escena.add(cuerpo);
 
+  // Formas (morph targets) por nombre, repartidas en todas las mallas que las tengan (cabeza, dientes, lengua, pestañas…).
+  const formas = new Map();
   cuerpo.traverse(n => {
     if (!n.isMesh) return;
     n.frustumCulled = false;
     const m = n.material;
     // Cejas y pestañas con borde suave; el resto, opaco (así no se mezclan capas).
-    if (/eyebrow|eyelash/.test(m.name)) { m.transparent = true; m.alphaTest = 0.05; m.depthWrite = false; n.renderOrder = 2; }
-    else if (/ponytail|hair/.test(m.name)) { m.transparent = false; m.alphaTest = 0.5; m.side = THREE.DoubleSide; }
+    if (/eyebrow|eyelash|eyeao/i.test(m.name)) { m.transparent = true; m.alphaTest = 0.05; m.depthWrite = false; n.renderOrder = 2; }
+    // Pelo de Avaturn: mechones finos con transparencia; con corte duro se ven serruchos.
+    else if (/avaturn_hair/i.test(m.name)) { m.transparent = true; m.alphaTest = 0.15; m.depthWrite = true; m.side = THREE.DoubleSide; n.renderOrder = 1; }
+    else if (/ponytail|hair/i.test(m.name)) { m.transparent = false; m.alphaTest = 0.5; m.side = THREE.DoubleSide; }
     else { m.transparent = false; m.depthWrite = true; }
     // La ropa se dibuja siempre por delante de la piel que queda justo debajo.
-    if (/casualsuit|shoes|cloth|suit/.test(m.name)) { m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -4; }
+    if (/casualsuit|shoes|cloth|suit|look/i.test(m.name)) { m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -4; }
+    if (n.morphTargetDictionary && n.morphTargetInfluences) {
+      for (const [nombre, i] of Object.entries(n.morphTargetDictionary)) {
+        if (!formas.has(nombre)) formas.set(nombre, []);
+        formas.get(nombre).push([n.morphTargetInfluences, i]);
+      }
+    }
   });
 
   const cacheHuesos = new Map();
   const hueso = n => { if (!cacheHuesos.has(n)) cacheHuesos.set(n, cuerpo.getObjectByName(n)); return cacheHuesos.get(n); };
-  const H = {
-    cabeza: hueso("head"), cuello: hueso("neck02"), pecho: hueso("spine03"), torso: hueso("spine04"),
-    brazoI: hueso("upperarm01L"), brazoD: hueso("upperarm01R"), antebrazoI: hueso("lowerarm01L"), antebrazoD: hueso("lowerarm01R"),
-    claviculaI: hueso("clavicleL"), claviculaD: hueso("clavicleR"),
-    mandibula: hueso("jaw"), ojoI: hueso("eyeL"), ojoD: hueso("eyeR"),
-    parpadoI: hueso("orbicularis03L"), parpadoD: hueso("orbicularis03R"),
+  // Con blendshapes ARKit (Avaturn T2) la cara se anima con formas; si no, con los huesos faciales de MakeHuman.
+  const conFormas = formas.has("jawOpen") && formas.has("eyeBlinkLeft") && !!hueso("Head");
+  const NOMBRES = conFormas ? {
+    cabeza: "Head", cuello: "Neck", pecho: "Spine2", torso: "Spine1",
+    brazoI: "LeftArm", brazoD: "RightArm", antebrazoI: "LeftForeArm", antebrazoD: "RightForeArm",
+    claviculaI: "LeftShoulder", claviculaD: "RightShoulder", ojoI: "LeftEye", ojoD: "RightEye",
+  } : {
+    cabeza: "head", cuello: "neck02", pecho: "spine03", torso: "spine04",
+    brazoI: "upperarm01L", brazoD: "upperarm01R", antebrazoI: "lowerarm01L", antebrazoD: "lowerarm01R",
+    claviculaI: "clavicleL", claviculaD: "clavicleR",
+    mandibula: "jaw", ojoI: "eyeL", ojoD: "eyeR",
+    parpadoI: "orbicularis03L", parpadoD: "orbicularis03R",
   };
+  const H = {};
+  for (const [k, n] of Object.entries(NOMBRES)) H[k] = hueso(n);
 
-  // Postura de reposo: brazos abajo, codos algo flectados.
+  // Postura de reposo: brazos abajo, codos algo flectados. Los modelos Avaturn vienen en T (brazos horizontales).
+  const bajarBrazos = conFormas ? 1.22 : 0.68;
   cuerpo.updateMatrixWorld(true);
-  rotarMundo(H.brazoI, Z, -0.68); rotarMundo(H.brazoD, Z, 0.68);
+  rotarMundo(H.brazoI, Z, -bajarBrazos); rotarMundo(H.brazoD, Z, bajarBrazos);
   rotarMundo(H.brazoI, X, -0.12); rotarMundo(H.brazoD, X, -0.12);
   cuerpo.updateMatrixWorld(true);
   rotarMundo(H.antebrazoI, X, -0.3); rotarMundo(H.antebrazoD, X, -0.3);
@@ -74,19 +95,43 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
   const pCabeza = H.cabeza ? H.cabeza.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(0, 1.45, 0.04);
   const objetivo = new THREE.Vector3(0, pCabeza.y - 0.035, pCabeza.z);
 
-  // Expresiones: desplazamientos (en metros, ejes del mundo) de los huesos faciales de MakeHuman.
-  // [hueso, x hacia afuera, y hacia arriba, z hacia adelante]; se aplican en espejo a .L y .R.
+  // Expresiones.
+  // cara: desplazamientos (en metros, ejes del mundo) de los huesos faciales de MakeHuman.
+  //   [hueso, x hacia afuera, y hacia arriba, z hacia adelante]; se aplican en espejo a .L y .R.
+  // formas: pesos de blendshapes ARKit (0 a 1) para modelos con formas; «Left/Right» se agregan en espejo.
   const GESTOS = {
-    neutral: { cara: [] },
-    alegria: { cara: [["oris07", 0.015, 0.018], ["risorius03", 0.009, 0.009], ["risorius02", 0.006, 0.006], ["orbicularis04", 0, 0.003], ["oculi01", 0, 0.002]], cabeza: -0.02 },
-    alivio: { cara: [["oris07", 0.008, 0.01], ["risorius03", 0.005, 0.005], ["oculi01", -0.001, 0.003]], cabeza: 0 },
-    tristeza: { cara: [["oris07", 0, -0.012], ["oris04", 0, -0.003], ["oris03", 0, -0.004], ["oculi01", -0.003, 0.009], ["oculi02", 0, -0.003]], cabeza: 0.07, mirada: 0.12 },
-    preocupacion: { cara: [["oris07", -0.001, -0.006], ["oris04", 0, -0.002], ["oris03", 0, -0.002], ["oculi01", -0.004, 0.006]], cabeza: 0.03 },
-    nerviosismo: { cara: [["oris07", -0.001, -0.002], ["oculi01", -0.002, 0.004], ["oculi02", 0, 0.001]], cabeza: 0.02, inquieta: true },
-    molestia: { cara: [["oculi01", -0.004, -0.004], ["oculi02", 0, -0.002], ["oris07", -0.003, -0.002]], cabeza: -0.015 },
-    sorpresa: { cara: [["temporalis01", 0, 0.005], ["oculi01", 0, 0.004], ["oculi02", 0, 0.005]], cabeza: -0.03, mandibula: 0.05 },
-    miedo: { cara: [["oculi01", -0.003, 0.007], ["oculi02", 0, 0.002], ["oris07", 0.004, -0.004], ["oris03", 0, -0.001]], cabeza: 0.02, inquieta: true },
+    neutral: { cara: [], formas: {} },
+    alegria: { cara: [["oris07", 0.015, 0.018], ["risorius03", 0.009, 0.009], ["risorius02", 0.006, 0.006], ["orbicularis04", 0, 0.003], ["oculi01", 0, 0.002]], cabeza: -0.02,
+      formas: { mouthSmile: 0.55, cheekSquint: 0.35, eyeSquint: 0.2, browOuterUp: 0.1 } },
+    alivio: { cara: [["oris07", 0.008, 0.01], ["risorius03", 0.005, 0.005], ["oculi01", -0.001, 0.003]], cabeza: 0,
+      formas: { mouthSmile: 0.3, cheekSquint: 0.15, browInnerUp: 0.1 } },
+    tristeza: { cara: [["oris07", 0, -0.012], ["oris04", 0, -0.003], ["oris03", 0, -0.004], ["oculi01", -0.003, 0.009], ["oculi02", 0, -0.003]], cabeza: 0.07, mirada: 0.12,
+      formas: { mouthFrown: 0.55, browInnerUp: 0.65, mouthShrugLower: 0.25, mouthPress: 0.1, eyeSquint: 0.1 } },
+    preocupacion: { cara: [["oris07", -0.001, -0.006], ["oris04", 0, -0.002], ["oris03", 0, -0.002], ["oculi01", -0.004, 0.006]], cabeza: 0.03,
+      formas: { browInnerUp: 0.45, mouthFrown: 0.2, mouthPress: 0.15 } },
+    nerviosismo: { cara: [["oris07", -0.001, -0.002], ["oculi01", -0.002, 0.004], ["oculi02", 0, 0.001]], cabeza: 0.02, inquieta: true,
+      formas: { browInnerUp: 0.35, mouthPress: 0.3, mouthStretch: 0.12, eyeWide: 0.1 } },
+    molestia: { cara: [["oculi01", -0.004, -0.004], ["oculi02", 0, -0.002], ["oris07", -0.003, -0.002]], cabeza: -0.015,
+      formas: { browDown: 0.5, mouthPress: 0.35, noseSneer: 0.15, eyeSquint: 0.25, mouthFrown: 0.15 } },
+    sorpresa: { cara: [["temporalis01", 0, 0.005], ["oculi01", 0, 0.004], ["oculi02", 0, 0.005]], cabeza: -0.03, mandibula: 0.05,
+      formas: { browInnerUp: 0.6, browOuterUp: 0.6, eyeWide: 0.5, jawOpen: 0.12 } },
+    miedo: { cara: [["oculi01", -0.003, 0.007], ["oculi02", 0, 0.002], ["oris07", 0.004, -0.004], ["oris03", 0, -0.001]], cabeza: 0.02, inquieta: true,
+      formas: { browInnerUp: 0.7, browOuterUp: 0.3, eyeWide: 0.45, mouthStretch: 0.3, mouthFrown: 0.15 } },
   };
+  // Pesos de formas de este cuadro; al final se copian a las mallas.
+  const pesoForma = {};
+  function sumarForma(nombre, valor) {
+    if (!valor) return;
+    if (formas.has(nombre)) pesoForma[nombre] = (pesoForma[nombre] || 0) + valor;
+    else if (formas.has(nombre + "Left")) { sumarForma(nombre + "Left", valor); sumarForma(nombre + "Right", valor); }
+  }
+  function aplicarFormas() {
+    for (const [nombre, destinos] of formas) {
+      const v = Math.min(1, pesoForma[nombre] || 0);
+      for (const [influencias, i] of destinos) influencias[i] = v;
+      pesoForma[nombre] = 0;
+    }
+  }
   // Cada hueso facial guarda su posición de reposo y cómo se ve un metro del mundo en sus ejes locales.
   const huesosCara = new Map();
   for (const g of Object.values(GESTOS)) for (const [n] of g.cara) for (const lado of ["L", "R"]) {
@@ -115,6 +160,7 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
       const w = pesos[k]; if (w < 0.002) continue;
       const g = GESTOS[k];
       cabeza += (g.cabeza || 0) * w; mirada += (g.mirada || 0) * w; mandibula += (g.mandibula || 0) * w; if (g.inquieta) inquieta += w;
+      if (conFormas) { for (const [n, v] of Object.entries(g.formas || {})) sumarForma(n, v * w); continue; }
       for (const [n, x, y, z = 0] of g.cara) for (const [lado, sx] of [["L", 1], ["R", -1]]) {
         const b = hueso(n + lado), d = b && huesosCara.get(b); if (!d) continue;
         tmp.copy(d.ex).multiplyScalar(x * sx * w).addScaledVector(d.ey, y * w).addScaledVector(d.ez, z * w);
@@ -213,8 +259,11 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
     rotarMundo(H.cabeza, Y, Math.sin(t * 0.37 + 2) * 0.04 * amp);
     rotarMundo(H.cabeza, Z, (Math.sin(t * 0.29) * 0.02 + habla * Math.sin(t * 2.1) * 0.012) * amp);
 
-    // Mandíbula.
-    rotarMundo(H.mandibula, X, boca * 0.2 + gesto.mandibula);
+    // Mandíbula (con formas: apertura de mandíbula más una «a» suave para que los labios acompañen).
+    if (conFormas) {
+      sumarForma("jawOpen", boca * 0.3);
+      sumarForma("viseme_aa", boca * 0.35);
+    } else rotarMundo(H.mandibula, X, boca * 0.2 + gesto.mandibula);
 
     // Mirada: pequeños desvíos y vuelta a la estudiante.
     if (t > proximaMirada) {
@@ -234,8 +283,15 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
       cierre = d < 1 ? d : d < 2 ? 2 - d : 0;
       if (d >= 2) { parpadeo = -1; proximoParpadeo = t + (gesto.inquieta > 0.5 ? 0.8 + Math.random() * 1.5 : 2 + Math.random() * 4); }
     }
-    const lid = 0.4 * cierre + Math.max(0, miradaY) * 0.5;
-    rotarMundo(H.parpadoI, X, lid); rotarMundo(H.parpadoD, X, lid);
+    if (conFormas) {
+      // Los Avaturn tienen los ojos muy abiertos en reposo: un 15 % de párpado los deja naturales.
+      // Los ojos giran con sus huesos; el párpado baja un poco cuando mira hacia abajo.
+      sumarForma("eyeBlink", Math.min(1, 0.15 + 0.85 * cierre + Math.max(0, miradaY) * 0.6));
+      aplicarFormas();
+    } else {
+      const lid = 0.4 * cierre + Math.max(0, miradaY) * 0.5;
+      rotarMundo(H.parpadoI, X, lid); rotarMundo(H.parpadoD, X, lid);
+    }
 
     renderer.render(escena, camara);
   }
