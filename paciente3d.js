@@ -75,21 +75,42 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
   const objetivo = new THREE.Vector3(0, pCabeza.y - 0.035, pCabeza.z);
 
   // Expresiones: desplazamientos (en metros, ejes del mundo) de los huesos faciales de MakeHuman.
-  // [hueso, x hacia afuera, y hacia arriba, z hacia adelante]; se aplican en espejo a .L y .R.
+  // [hueso, x hacia afuera, y hacia arriba, z hacia adelante]; los que terminan en L/R se aplican en espejo.
+  // Mapa del rig (medido sobre los pesos de piel de patricia.glb):
+  //   comisura de la boca = levator05 (36 %) + oris03 (30 %) + oris07 (19 %): para moverla se mueven los tres juntos.
+  //   oris03 = labio superior lateral · oris05 = centro del labio superior · oris07 = labio inferior lateral
+  //   oris01 = centro del labio inferior · special04 = mentón · risorius03 = mejilla
+  //   oculi01 = ceja (es el único hueso de la ceja con piel; oculi02, temporalis y levator02-04 no mueven nada)
+  // Los movimientos reales de la cara son de pocos milímetros; los valores son mayores porque los pesos de piel
+  // de estos huesos son bajos (20 a 60 %).
+  // parpados: + entrecierra (sonrisa, pena, enojo), − abre (sorpresa, miedo). ataque: segundos en llegar al gesto.
   const GESTOS = {
-    neutral: { cara: [] },
-    alegria: { cara: [["oris07", 0.015, 0.018], ["risorius03", 0.009, 0.009], ["risorius02", 0.006, 0.006], ["orbicularis04", 0, 0.003], ["oculi01", 0, 0.002]], cabeza: -0.02 },
-    alivio: { cara: [["oris07", 0.008, 0.01], ["risorius03", 0.005, 0.005], ["oculi01", -0.001, 0.003]], cabeza: 0 },
-    tristeza: { cara: [["oris07", 0, -0.012], ["oris04", 0, -0.003], ["oris03", 0, -0.004], ["oculi01", -0.003, 0.009], ["oculi02", 0, -0.003]], cabeza: 0.07, mirada: 0.12 },
-    preocupacion: { cara: [["oris07", -0.001, -0.006], ["oris04", 0, -0.002], ["oris03", 0, -0.002], ["oculi01", -0.004, 0.006]], cabeza: 0.03 },
-    nerviosismo: { cara: [["oris07", -0.001, -0.002], ["oculi01", -0.002, 0.004], ["oculi02", 0, 0.001]], cabeza: 0.02, inquieta: true },
-    molestia: { cara: [["oculi01", -0.004, -0.004], ["oculi02", 0, -0.002], ["oris07", -0.003, -0.002]], cabeza: -0.015 },
-    sorpresa: { cara: [["temporalis01", 0, 0.005], ["oculi01", 0, 0.004], ["oculi02", 0, 0.005]], cabeza: -0.03, mandibula: 0.05 },
-    miedo: { cara: [["oculi01", -0.003, 0.007], ["oculi02", 0, 0.002], ["oris07", 0.004, -0.004], ["oris03", 0, -0.001]], cabeza: 0.02, inquieta: true },
+    neutral: { cara: [], ataque: 0.7 },
+    alegria: { ataque: 0.45, cabeza: -0.02, parpados: 0.05,
+      cara: [["levator05", 0.007, 0.008, -0.002], ["oris03", 0.003, 0.003, -0.001], ["oris07", 0.003, 0.002],
+             ["risorius03", 0.003, 0.005, 0.0015], ["oculi01", 0, -0.0008]] },
+    alivio: { ataque: 0.8, cabeza: 0.01, parpados: 0.03,
+      cara: [["levator05", 0.004, 0.0045, -0.001], ["oris03", 0.0015, 0.0015], ["oris07", 0.0015, 0.001],
+             ["risorius03", 0.0015, 0.0025], ["oculi01", 0.0005, -0.001]] },
+    tristeza: { ataque: 1.2, cabeza: 0.07, mirada: 0.12, parpados: 0.07,
+      cara: [["levator05", -0.001, -0.006], ["oris03", 0, -0.0015], ["oris07", 0, -0.002], ["oris01", 0, 0.001, 0.0015],
+             ["special04", 0, 0.002, 0.001], ["oculi01", -0.0025, 0.005]] },
+    preocupacion: { ataque: 0.8, cabeza: 0.03, parpados: 0.02,
+      cara: [["oculi01", -0.002, 0.0035], ["levator05", -0.001, -0.002], ["oris07", 0, -0.0008], ["oris01", 0, 0.0008]] },
+    nerviosismo: { ataque: 0.5, cabeza: 0.02, inquieta: true,
+      cara: [["oculi01", -0.0015, 0.003], ["levator05", 0.003, -0.001], ["oris07", 0.0015, -0.0005], ["oris01", 0, 0.001]] },
+    molestia: { ataque: 0.5, cabeza: -0.015, parpados: 0.06,
+      cara: [["oculi01", -0.003, -0.004, 0.001], ["levator05", -0.001, -0.0012], ["oris07", 0, -0.0005], ["oris01", 0, 0.0015],
+             ["levator06", 0, 0.001]] },
+    sorpresa: { ataque: 0.22, cabeza: -0.03, mandibula: 0.06, parpados: -0.09,
+      cara: [["oculi01", 0, 0.007], ["levator05", -0.001, -0.0005]] },
+    miedo: { ataque: 0.3, cabeza: 0.02, mandibula: 0.02, parpados: -0.07, inquieta: true,
+      cara: [["oculi01", -0.0025, 0.006], ["levator05", 0.004, -0.003], ["oris07", 0.002, -0.0015], ["oris03", 0.001, 0]] },
   };
   // Cada hueso facial guarda su posición de reposo y cómo se ve un metro del mundo en sus ejes locales.
   const huesosCara = new Map();
-  for (const g of Object.values(GESTOS)) for (const [n] of g.cara) for (const lado of ["L", "R"]) {
+  const ladosDe = n => hueso(n + "L") ? [["L", 1], ["R", -1]] : [["", 1]];
+  for (const g of Object.values(GESTOS)) for (const [n] of g.cara) for (const [lado] of ladosDe(n)) {
     const b = hueso(n + lado);
     if (!b || huesosCara.has(b)) continue;
     const q = new THREE.Quaternion(); b.parent.getWorldQuaternion(q); q.invert();
@@ -97,31 +118,42 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
     const eje = v => v.clone().applyQuaternion(q).divide(esc);
     huesosCara.set(b, { reposo: b.position.clone(), ex: eje(X), ey: eje(Y), ez: eje(Z) });
   }
+  // Una cara real no sostiene la expresión al máximo: llega a un pico y se asienta en un nivel más suave,
+  // con pequeñas variaciones. La base es una preocupación leve (espera un resultado).
+  const BASE = { preocupacion: 0.35 };
   const pesos = {}, pesosObj = {};
-  for (const k in GESTOS) { pesos[k] = 0; pesosObj[k] = 0; }
-  pesos.preocupacion = pesosObj.preocupacion = 0.6; // estado de base de una paciente que espera un resultado
+  for (const k in GESTOS) { pesos[k] = BASE[k] || 0; pesosObj[k] = BASE[k] || 0; }
+  let actual = null, inicio = 0, reloj0 = 0; // null: aún no llega ninguna emoción → base
   function emocion(nombre) {
     if (!GESTOS[nombre]) return;
-    for (const k in pesosObj) pesosObj[k] = 0;
-    pesosObj[nombre] = nombre === "neutral" ? 0 : 1;
+    actual = nombre;
+    inicio = reloj0;
   }
+  // Intensidad del gesto en el tiempo: pico ~2 s y luego se asienta en 60 %.
+  const intensidad = s => s < 2 ? 1 : 0.6 + 0.4 * Math.exp(-(s - 2) / 2.5);
   const tmp = new THREE.Vector3();
-  let suavizado = 0.06;
-  function aplicarGestos() {
+  function aplicarGestos(t, dt) {
+    reloj0 = t;
     for (const [b, d] of huesosCara) b.position.copy(d.reposo);
-    let cabeza = 0, mirada = 0, mandibula = 0, inquieta = 0;
+    for (const k in pesosObj) pesosObj[k] = actual === null ? (BASE[k] || 0) : k === actual && k !== "neutral" ? intensidad(t - inicio) : 0;
+    let cabeza = 0, mirada = 0, mandibula = 0, inquieta = 0, parpados = 0;
     for (const k in GESTOS) {
-      pesos[k] += (pesosObj[k] - pesos[k]) * suavizado;
-      const w = pesos[k]; if (w < 0.002) continue;
+      const sube = pesosObj[k] > pesos[k];
+      const tau = sube ? (GESTOS[k].ataque || 0.6) : 0.9; // aparece con su ritmo, se va más despacio
+      pesos[k] += (pesosObj[k] - pesos[k]) * (1 - Math.exp(-dt * 3 / tau));
+      const w0 = pesos[k]; if (w0 < 0.002) continue;
+      const w = w0 * (1 + 0.05 * Math.sin(t * 0.83 + k.length) + 0.03 * Math.sin(t * 1.9 + k.length * 2)); // micro-variación
       const g = GESTOS[k];
-      cabeza += (g.cabeza || 0) * w; mirada += (g.mirada || 0) * w; mandibula += (g.mandibula || 0) * w; if (g.inquieta) inquieta += w;
-      for (const [n, x, y, z = 0] of g.cara) for (const [lado, sx] of [["L", 1], ["R", -1]]) {
+      cabeza += (g.cabeza || 0) * w; mirada += (g.mirada || 0) * w; mandibula += (g.mandibula || 0) * w;
+      parpados += (g.parpados || 0) * w; if (g.inquieta) inquieta += w0;
+      for (const [n, x, y, z = 0] of g.cara) for (const [lado, sx] of ladosDe(n)) {
         const b = hueso(n + lado), d = b && huesosCara.get(b); if (!d) continue;
-        tmp.copy(d.ex).multiplyScalar(x * sx * w).addScaledVector(d.ey, y * w).addScaledVector(d.ez, z * w);
+        const asim = lado === "R" ? 0.88 : 1; // ninguna cara es perfectamente simétrica
+        tmp.copy(d.ex).multiplyScalar(x * sx * w * asim).addScaledVector(d.ey, y * w * asim).addScaledVector(d.ez, z * w * asim);
         b.position.add(tmp);
       }
     }
-    return { cabeza, mirada, mandibula, inquieta };
+    return { cabeza, mirada, mandibula, inquieta, parpados };
   }
 
   // Nivel de voz: un analizador sobre una copia de cada reproductor (captureStream), sin desviar la salida de sonido.
@@ -194,13 +226,12 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
     ajustar();
     const t = reloj.getElapsedTime();
     const dt = Math.min(0.25, t - (animar.previo ?? t)); animar.previo = t;
-    suavizado = 1 - Math.exp(-dt * 3.5); // ~0,7 s para cambiar de expresión
     const objetivoBoca = nivelVoz(t);
     boca += (objetivoBoca - boca) * (objetivoBoca > boca ? 0.5 : 0.25);
     const habla = hablando() ? 1 : 0;
     for (const k in base) H[k].quaternion.copy(base[k]);
     const amp = quieta ? 0.3 : 1;
-    const gesto = aplicarGestos();
+    const gesto = aplicarGestos(t, dt);
 
     // Respiración y balanceo suave.
     const resp = Math.sin(t * 1.5);
@@ -234,7 +265,7 @@ export async function montarPaciente3D(contenedor, { modelo } = {}) {
       cierre = d < 1 ? d : d < 2 ? 2 - d : 0;
       if (d >= 2) { parpadeo = -1; proximoParpadeo = t + (gesto.inquieta > 0.5 ? 0.8 + Math.random() * 1.5 : 2 + Math.random() * 4); }
     }
-    const lid = 0.4 * cierre + Math.max(0, miradaY) * 0.5;
+    const lid = Math.max(-0.1, 0.4 * cierre + Math.max(0, miradaY) * 0.5 + gesto.parpados * (1 - cierre));
     rotarMundo(H.parpadoI, X, lid); rotarMundo(H.parpadoD, X, lid);
 
     renderer.render(escena, camara);
