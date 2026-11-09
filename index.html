@@ -669,9 +669,10 @@ async function enviar(texto) {
   const sonando = voz ? voz.reproducir() : Promise.resolve();
   let bruto = "";
   try {
-    const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnos, caso: casoActual && casoActual.id, enVivo: true, semilla }) });
+    const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnos, caso: casoActual && casoActual.id, enVivo: true, semilla, emociones: !!modelo3d }) });
     let leidoHasta = 0;
-    if (/json/.test(r.headers.get("content-type") || "")) bruto = (await r.json()).texto || "";
+    let limpio = "";
+    if (/json/.test(r.headers.get("content-type") || "")) { bruto = (await r.json()).texto || ""; limpio = separarEmocion(bruto); }
     else {
       const lector = r.body.getReader(), dec = new TextDecoder();
     b.setAttribute("aria-busy", "true");
@@ -679,15 +680,16 @@ async function enviar(texto) {
         const { value, done } = await lector.read();
         if (done) break;
         bruto += dec.decode(value, { stream: true });
-        if (!marcas.primerTexto && bruto.trim()) marcas.primerTexto = performance.now();
-        if (bruto.trim()) { b.classList.remove("espera"); b.textContent = bruto.trimStart(); mostrarSubtitulo(bruto); mostrarAlFinal(b.parentElement); }
-        if (voz && !leidoHasta) { const corte = primerCorte(bruto); if (corte) { voz.agregar(bruto.slice(0, corte)); leidoHasta = corte; } }
+        limpio = separarEmocion(bruto);
+        if (!marcas.primerTexto && limpio.trim()) marcas.primerTexto = performance.now();
+        if (limpio.trim()) { b.classList.remove("espera"); b.textContent = limpio.trimStart(); mostrarSubtitulo(limpio); mostrarAlFinal(b.parentElement); }
+        if (voz && !leidoHasta) { const corte = primerCorte(limpio); if (corte) { voz.agregar(limpio.slice(0, corte)); leidoHasta = corte; } }
       }
     }
     b.removeAttribute("aria-busy");
-    const resp = bruto.trim();
+    const resp = limpio.trim();
     if (!resp) throw new Error("La paciente no alcanzó a responder. Vuelve a intentarlo.");
-    if (voz) { voz.agregar(bruto.slice(leidoHasta)); voz.cerrar(); }
+    if (voz) { voz.agregar(limpio.slice(leidoHasta)); voz.cerrar(); }
     b.classList.remove("espera"); b.textContent = resp; mostrarSubtitulo(resp);
     if (!voz) anunciar(nombrePaciente() + ": " + resp);
     turnos.push({ role: "assistant", content: resp });
@@ -793,6 +795,17 @@ function pintarVoz() {
   $("btnVoz").title = "Voz de la paciente: " + (vozActiva ? "activada" : "desactivada");
 }
 $("btnVoz").onclick = () => { vozActiva = !vozActiva; if (!vozActiva) callarPaciente(); guardar("voz", vozActiva ? "1" : "0"); pintarVoz(); };
+
+/* Emoción de la cara: la paciente 3D recibe una etiqueta al inicio de cada respuesta ([tristeza], [alivio]…).
+   Se aplica al cuerpo y se borra del texto, la voz y la transcripción. */
+const ETIQUETA_EMOCION = /\[\s*(neutral|alegr[ií]a|alivio|tristeza|preocupaci[oó]n|nerviosismo|molestia|sorpresa|miedo)\s*\]\s*/gi;
+function separarEmocion(texto) {
+  if (/^\s*\[[^\]]{0,20}$/.test(texto)) return ""; // la etiqueta aún no termina de llegar
+  let emocion = "";
+  const limpio = texto.replace(ETIQUETA_EMOCION, (m, e) => { if (!emocion) emocion = e; return ""; });
+  if (emocion && paciente3d) paciente3d.emocion(emocion.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+  return limpio;
+}
 
 /* Paciente con cuerpo (3D): solo los casos que tienen modelo. Se descarga al elegir el caso;
    si el dispositivo no puede mostrarla, queda el avatar simple sin avisos. */

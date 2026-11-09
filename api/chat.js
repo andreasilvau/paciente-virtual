@@ -2,6 +2,13 @@
 import { error, verificarAcceso } from "./_lib.js";
 import { buscarCaso } from "./_datos.js";
 import { reglasPaciente, reglasFeedback } from "./_reglas.js";
+
+// Solo para pacientes con cuerpo 3D: una etiqueta inicial que la app usa para el gesto de la cara y luego borra.
+const REGLA_EMOCION = `
+
+EXPRESIÓN DE LA CARA
+- Empieza SIEMPRE tu respuesta con una sola etiqueta entre corchetes con la emoción que muestra tu cara en ese momento, según la carga emocional y lo que acaba de pasar: [neutral], [alegria], [alivio], [tristeza], [preocupacion], [nerviosismo], [molestia], [sorpresa] o [miedo]. Ejemplo: [preocupacion] Sí, me hice el examen hace un mes.
+- La etiqueta no se lee en voz alta. No escribas ninguna otra etiqueta ni acotación.`;
 import { reglasRubrica, calcularRubrica } from "./_rubrica.js";
 
 const MODELO_PACIENTE = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
@@ -111,8 +118,9 @@ export async function POST(request) {
       return Response.json({ texto });
     }
     if (!turnos.length || turnos[turnos.length - 1].role !== "user") return error(400, "No llegó tu intervención.");
-    if (body.enVivo) return await responderEnVivo(MODELO_PACIENTE, reglasPaciente(caso, body.semilla), turnos, 250);
-    const texto = await preguntarAClaude(MODELO_PACIENTE, reglasPaciente(caso, body.semilla), turnos, 250);
+    const reglas = reglasPaciente(caso, body.semilla) + (body.emociones ? REGLA_EMOCION : "");
+    if (body.enVivo) return await responderEnVivo(MODELO_PACIENTE, reglas, turnos, 250);
+    const texto = await preguntarAClaude(MODELO_PACIENTE, reglas, turnos, 250);
     if (!texto) return error(502, "La paciente no alcanzó a responder. Vuelve a intentarlo.");
     return Response.json({ texto });
   } catch (e) {
