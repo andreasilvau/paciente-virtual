@@ -109,6 +109,8 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .actividad .cod { font: 700 1.05rem/1.2 var(--display); }
 @media (max-width: 760px) { .actividad { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .lista { position: static; } }
+.transferir { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.transferir button { font-size: .85rem; padding-inline: 6px; }
 </style>
 </head>
 <body>
@@ -131,6 +133,11 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
     <nav class="lista" aria-label="Personajes">
       <div id="lista" style="display:flex;flex-direction:column;gap:6px"></div>
       <button type="button" id="btnNuevo">+ Nuevo personaje</button>
+      <div class="transferir">
+        <button type="button" id="btnExportar" title="Descarga todos los personajes en un archivo .json">Exportar casos</button>
+        <button type="button" id="btnImportar" title="Carga personajes desde un archivo .json exportado">Importar casos</button>
+        <input type="file" id="archivoImportar" accept=".json,application/json" hidden>
+      </div>
       <button type="button" id="btnActividades" class="item" style="margin-top:12px"><b>Actividades y guía</b><small>Códigos para tus clases</small></button>
       <button type="button" id="btnPronunciacion" class="item"><b>Pronunciación</b><small>Cómo dice la voz ciertas palabras</small></button>
       <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
@@ -446,6 +453,51 @@ function fraseDe(c) {
   const m = String(c.guion_clinico || "").match(/[“"«]([^"”»]{6,160})[”"»]/);
   return m ? m[1] : "Hola, buenas tardes. Vengo a la consulta.";
 }
+/* Exportar e importar personajes (archivo .json) */
+const FORMATO = "paciente-virtual-casos";
+$("btnExportar").onclick = () => {
+  if (!casos.length) { aviso("No hay personajes para exportar."); return; }
+  const limpio = casos.map(c => { const o = { id: c.id }; for (const k of [...CAMPOS, "estilo", "rubrica_na"]) if (k in c) o[k] = c[k]; return o; });
+  const datos = { formato: FORMATO, version: 1, exportado: new Date().toISOString(), casos: limpio };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = `casos-paciente-virtual-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  aviso(`Se exportaron ${limpio.length} personajes.`);
+};
+$("btnImportar").onclick = () => {
+  if (!editable) { aviso("Para importar, primero hay que conectar la base de datos (SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel)."); return; }
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Importar igual?")) return;
+  $("archivoImportar").value = ""; $("archivoImportar").click();
+};
+$("archivoImportar").onchange = async () => {
+  const f = $("archivoImportar").files[0]; if (!f) return;
+  let lista;
+  try {
+    const d = JSON.parse(await f.text());
+    lista = Array.isArray(d) ? d : d.casos;
+    if (!Array.isArray(lista) || !lista.length) throw new Error();
+  } catch { aviso("El archivo no es una exportación de casos válida (.json)."); return; }
+  lista = lista.filter(c => c && typeof c === "object" && c.id);
+  const ids = lista.map(c => String(c.id).trim().toLowerCase());
+  const repetidos = lista.filter((c, i) => casos.some(x => x.id === ids[i]));
+  const nombres = repetidos.map(c => c.nombre || c.id).join(", ");
+  if (!confirm(`Se importarán ${lista.length} personaje(s).` + (repetidos.length ? `\n\nYa existen y se reemplazarán: ${nombres}.` : "") + "\n\n¿Continuar?")) return;
+  let ok = 0; const fallas = [];
+  for (let i = 0; i < lista.length; i++) {
+    const c = lista[i], id = ids[i], datos = {};
+    for (const k of [...CAMPOS, "estilo", "rubrica_na"]) if (k in c) datos[k] = c[k];
+    aviso(`Importando ${i + 1} de ${lista.length}: ${c.nombre || id}…`);
+    try {
+      await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, nuevo: !casos.some(x => x.id === id), datos }) });
+      ok++;
+    } catch (e) { fallas.push(`${c.nombre || id}: ${e.message}`); }
+  }
+  await cargar();
+  aviso(`Se importaron ${ok} de ${lista.length} personaje(s).` + (fallas.length ? " No se pudieron importar: " + fallas.join(" · ") : ""));
+};
+
 $("btnNuevo").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Crear otro igual?")) return; abrir(null); $("f_id").focus(); };
 $("editor").addEventListener("input", () => { cambios = true; $("estadoGuardado").textContent = "Cambios sin guardar"; $("estadoGuardado").className = ""; });
 window.addEventListener("beforeunload", e => { if (cambios) { e.preventDefault(); e.returnValue = ""; } });
