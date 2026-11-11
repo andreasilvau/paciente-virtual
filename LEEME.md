@@ -51,11 +51,19 @@ Variables en Vercel:
 |---|---|
 | `SUPABASE_URL` | `https://ykahennqppthymcwbwlr.supabase.co` |
 | `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API Keys → clave secreta (`sb_secret_…`) |
-| `DOCENTE_CODE` | Código para entrar a `/docente.html`, distinto del de los estudiantes |
+| `DOCENTE_CODE` | Código de administración para entrar a `/docente.html`, distinto del de los estudiantes |
 
 Si faltan las variables de Supabase, la aplicación usa los personajes de `api/_casos.js` como respaldo (sin poder editarlos).
 
 En `/docente.html` se editan las capas, se activa o desactiva cada personaje y se elige su voz de ElevenLabs desde una lista con las voces de la cuenta, con botones para escucharla.
+
+## Códigos individuales por docente
+
+- `DOCENTE_CODE` es el código de **administración**: puede todo, incluida la pestaña «Docentes».
+- En «Docentes» (solo administración) se crean los códigos individuales D1 a D6 con un clic. Cada fila muestra el código, el último ingreso, un interruptor para activarlo o desactivarlo y los botones para copiarlo o borrarlo. Los códigos no llevan nombres, solo etiqueta.
+- Con un código individual el panel muestra «Sesión D3» y es de **lectura y prueba**: se puede entrevistar, ver personajes, entrevistas y evaluaciones, y probar la voz. Editar o borrar personajes y entrevistas, cambiar el consentimiento, las actividades y la pronunciación, y administrar códigos queda solo para administración (el servidor lo exige, no solo la pantalla).
+- Un código desactivado o borrado deja de funcionar en menos de un minuto.
+- La tabla se crea con `sql/2026-11-12_docentes.sql`.
 
 ## Actividades y guía de la entrevista
 

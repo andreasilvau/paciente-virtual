@@ -1,6 +1,7 @@
 // Acceso a los personajes.
 // Si Supabase está configurado (SUPABASE_URL + SUPABASE_SECRET_KEY), los personajes se leen de la tabla "casos".
 // Si no, se usan los del archivo _casos.js como respaldo.
+import { randomBytes } from "node:crypto";
 import { CASOS } from "./_casos.js";
 
 const URL_SB = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
@@ -196,4 +197,48 @@ export async function leerAjuste(clave) {
 export async function guardarAjuste(clave, valor) {
   await pedirSupabase("ajustes", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ clave, valor, actualizado: new Date().toISOString() }) });
   cacheAjustes = null;
+}
+
+// Docentes: códigos de ingreso individuales al panel (etiqueta D1…D6, sin nombres).
+// El código de administración (DOCENTE_CODE) no está en la tabla: lo revisa api/docente.js.
+let cacheDoc = null, horaDoc = 0;
+const ALFABETO_COD = "abcdefghjkmnpqrstuvwxyz23456789"; // sin letras ni números que se confundan
+export function generarCodigoDocente() {
+  let s = "";
+  for (const b of randomBytes(8)) s += ALFABETO_COD[b % ALFABETO_COD.length];
+  return "pvc-" + s;
+}
+export async function listarDocentes() {
+  if (!supabaseConfigurado) return [];
+  return pedirSupabase("docentes?select=*&order=etiqueta.asc");
+}
+export async function buscarDocente(codigo) {
+  codigo = normalizarCodigo(codigo);
+  if (!codigo || !supabaseConfigurado) return null;
+  if (!cacheDoc || Date.now() - horaDoc > 30_000) { cacheDoc = await listarDocentes(); horaDoc = Date.now(); }
+  return cacheDoc.find(d => d.activo && d.codigo === codigo) || null;
+}
+export async function crearDocente(etiqueta) {
+  if (!supabaseConfigurado) throw new Error("Para crear códigos de docente falta configurar Supabase en Vercel.");
+  const r = await pedirSupabase("docentes", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ codigo: generarCodigoDocente(), etiqueta }) });
+  cacheDoc = null;
+  return Array.isArray(r) ? r[0] : r;
+}
+export async function cambiarEstadoDocente(codigo, activo) {
+  await pedirSupabase("docentes?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ activo: Boolean(activo) }) });
+  cacheDoc = null;
+}
+export async function borrarDocente(codigo) {
+  await pedirSupabase("docentes?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "DELETE" });
+  cacheDoc = null;
+}
+// Anota el último ingreso, como máximo una vez cada 10 minutos por código.
+const ultimoRegistroDoc = new Map();
+export async function registrarAccesoDocente(codigo) {
+  const ahora = Date.now();
+  if (ahora - (ultimoRegistroDoc.get(codigo) || 0) < 600_000) return;
+  ultimoRegistroDoc.set(codigo, ahora);
+  try {
+    await pedirSupabase("docentes?codigo=eq." + encodeURIComponent(codigo), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ultimo_acceso: new Date().toISOString() }) });
+  } catch (e) { console.error("Acceso docente", e.message); }
 }

@@ -1,16 +1,25 @@
 // Página de docente: ver y editar personajes, listar voces de ElevenLabs y probarlas.
-// Protegida con DOCENTE_CODE (distinto del código de los estudiantes).
+// Dos tipos de código, ambos distintos del de los estudiantes:
+// - DOCENTE_CODE (administración): puede todo, incluida la creación de códigos individuales.
+// - Códigos individuales de la tabla «docentes» (etiqueta D1…D6): pueden entrevistar y ver personajes, entrevistas y evaluaciones, pero no editar ni borrar.
 import { error } from "./_lib.js";
 import { PARTE_A, PARTE_B } from "./_rubrica.js";
-import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion, listarEntrevistas, verEntrevista, borrarEntrevista, leerAjuste, guardarAjuste } from "./_datos.js";
+import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion, listarEntrevistas, verEntrevista, borrarEntrevista, leerAjuste, guardarAjuste, listarDocentes, buscarDocente, crearDocente, cambiarEstadoDocente, borrarDocente, registrarAccesoDocente } from "./_datos.js";
 import { sintetizar } from "./hablar.js";
 
-function verificarDocente(request) {
-  const esperado = (process.env.DOCENTE_CODE || "").trim();
-  if (!esperado) return error(500, "Falta configurar DOCENTE_CODE en Vercel.");
+// Devuelve { rol, etiqueta } o una respuesta de error.
+async function verificarDocente(request) {
+  const admin = (process.env.DOCENTE_CODE || "").trim();
   const recibido = (request.headers.get("x-docente") || "").trim();
-  if (recibido !== esperado) return error(401, "El código de docente no es correcto.");
-  return null;
+  if (admin && recibido === admin) return { rol: "admin", etiqueta: "Administración" };
+  if (recibido) {
+    try {
+      const d = await buscarDocente(recibido);
+      if (d) { await registrarAccesoDocente(d.codigo); return { rol: "docente", etiqueta: d.etiqueta }; }
+    } catch (e) { console.error("Docentes", e.message); }
+  }
+  if (!admin) return error(500, "Falta configurar DOCENTE_CODE en Vercel.");
+  return error(401, "El código de docente no es correcto.");
 }
 
 async function vocesElevenLabs() {
@@ -25,18 +34,21 @@ async function vocesElevenLabs() {
 }
 
 export async function GET(request) {
-  const denegado = verificarDocente(request);
-  if (denegado) return denegado;
+  const sesion = await verificarDocente(request);
+  if (sesion instanceof Response) return sesion;
+  const admin = sesion.rol === "admin";
+  const editable = supabaseConfigurado && admin;
   try {
     const q = new URL(request.url).searchParams;
     if (q.get("voces")) return Response.json({ voces: await vocesElevenLabs() });
     if (q.get("rubrica")) return Response.json({ parteA: PARTE_A, parteB: PARTE_B });
     if (q.get("pronunciacion")) return Response.json({ lista: await listarPronunciacion() });
-    if (q.get("actividades")) return Response.json({ actividades: await listarActividades(), editable: supabaseConfigurado });
-    if (q.get("entrevistas")) return Response.json({ entrevistas: await listarEntrevistas({ completo: q.get("completo") === "1" }), editable: supabaseConfigurado });
+    if (q.get("docentes")) { if (!admin) return error(403, "Los códigos de docente los administra solo administración."); return Response.json({ docentes: await listarDocentes(), editable }); }
+    if (q.get("actividades")) { if (!admin) return error(403, "Las actividades las administra solo administración."); return Response.json({ actividades: await listarActividades(), editable }); }
+    if (q.get("entrevistas")) return Response.json({ entrevistas: await listarEntrevistas({ completo: q.get("completo") === "1" }), editable });
     if (q.get("entrevista")) return Response.json({ entrevista: await verEntrevista(q.get("entrevista")) });
-    if (q.get("consentimiento")) return Response.json({ consentimiento: (await leerAjuste("consentimiento")) || { activo: false, texto: "" }, editable: supabaseConfigurado });
-    return Response.json({ casos: await listarCasos({ incluirInactivos: true }), editable: supabaseConfigurado });
+    if (q.get("consentimiento")) return Response.json({ consentimiento: (await leerAjuste("consentimiento")) || { activo: false, texto: "" }, editable });
+    return Response.json({ casos: await listarCasos({ incluirInactivos: true }), editable, rol: sesion.rol, etiqueta: sesion.etiqueta });
   } catch (e) { return error(502, e.message); }
 }
 
@@ -67,16 +79,35 @@ function limpiar(datos) {
 }
 
 export async function POST(request) {
-  const denegado = verificarDocente(request);
-  if (denegado) return denegado;
+  const sesion = await verificarDocente(request);
+  if (sesion instanceof Response) return sesion;
+  const admin = sesion.rol === "admin";
   let body;
   try { body = await request.json(); } catch { return error(400, "Solicitud inválida."); }
+
+  // Con un código individual solo se puede probar la voz; todo lo demás (editar, borrar, crear códigos) es de administración.
+  if (!admin && body.accion !== "probar") return error(403, "Esta acción la hace solo administración.");
 
   if (body.accion === "probar") {
     const texto = String(body.texto || "Hola, buenas tardes. Vengo a la consulta.").slice(0, 300);
     return sintetizar(texto, body.caso, body.voz_id);
   }
 
+  if (body.accion === "docenteCrear") {
+    const etiqueta = String(body.etiqueta || "").trim();
+    if (!/^[A-Za-z0-9 -]{1,20}$/.test(etiqueta)) return error(400, "La etiqueta debe tener hasta 20 caracteres: letras, números, espacios o guiones (por ejemplo, D1). No uses nombres de personas.");
+    try {
+      const existentes = await listarDocentes();
+      if (existentes.some(d => d.etiqueta.toLowerCase() === etiqueta.toLowerCase())) return error(409, "Ya existe un docente con esa etiqueta.");
+      return Response.json({ docente: await crearDocente(etiqueta) });
+    } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "docenteEstado") {
+    try { await cambiarEstadoDocente(body.codigo, body.activo !== false); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "docenteBorrar") {
+    try { await borrarDocente(body.codigo); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
+  }
   if (body.accion === "actividad") {
     const codigo = normalizarCodigo(body.codigo);
     if (!/^[a-z0-9-]{4,40}$/.test(codigo)) return error(400, "El código debe tener entre 4 y 40 caracteres: letras minúsculas sin tildes, números o guiones.");
