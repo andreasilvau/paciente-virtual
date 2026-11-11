@@ -140,7 +140,7 @@ export async function POST(request) {
             const acceso = general ? null : await modoDeAcceso(codigo);
             await guardarEntrevista({
               participante,
-              actividad: general ? "general" : codigo.toLowerCase().slice(0, 40),
+              actividad: general ? "general" : (acceso && acceso.id) || codigo.toLowerCase().slice(0, 40),
               actividad_nombre: general ? "Práctica libre" : (acceso && acceso.actividad) || "",
               caso: caso.id, caso_nombre: caso.nombre, nivel: caso.nivel_dificultad,
               guia: String(body.guia || "").slice(0, 20),

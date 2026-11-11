@@ -219,7 +219,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
     <section id="vistaDocentes" class="actividades" hidden aria-labelledby="tituloDoc">
       <div class="caja" style="display:flex;flex-direction:column;gap:8px">
         <h2 id="tituloDoc">Códigos de ingreso de los docentes</h2>
-        <p>Cada docente entra a este panel con su propio código, y el panel solo muestra su etiqueta (D1 a D6), sin nombre. Con su código puede entrevistar y revisar personajes, entrevistas y evaluaciones, pero no editar ni borrar. Tu código de administración sigue funcionando como siempre.</p>
+        <p>Cada docente entra a este panel con su propio código, y el panel solo muestra su etiqueta (D1 a D6), sin nombre. Con su código puede revisar personajes, entrevistas y evaluaciones, pero no editar ni borrar. Para conversar con la paciente, entra a la pantalla de inicio, pestaña Estudiante, con el mismo código: la entrevista queda marcada como «Prueba interna D1». Tu código de administración sigue funcionando como siempre.</p>
         <p class="ayuda">Si desactivas un código, deja de funcionar en menos de un minuto. Entrega cada código en privado.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button type="button" class="primario" id="btnCrearD">Crear los códigos que faltan (D1 a D6)</button>
@@ -476,7 +476,7 @@ async function cargar() {
     const esAdmin = (d.rol || "admin") === "admin";
     document.body.classList.toggle("solo-lectura", !esAdmin); $("btnDocentes").hidden = !esAdmin;
     $("formAcceso").hidden = true; $("panel").hidden = false;
-    if (!esAdmin) aviso(`Sesión ${d.etiqueta}: puedes entrevistar y revisar personajes, entrevistas y evaluaciones. Editar o borrar lo hace administración.`);
+    if (!esAdmin) aviso(`Sesión ${d.etiqueta}: puedes revisar personajes, entrevistas y evaluaciones. Para conversar con la paciente, usa «Volver al inicio» e ingresa con tu código en la pestaña Estudiante. Editar o borrar lo hace administración.`);
     else if (!editable) aviso("Estás viendo los personajes del archivo de respaldo. Para editarlos, configura SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel.");
     pintarLista();
     abrir(actual ? casos.find(c => c.id === actual.id) || casos[0] : casos[0]);

@@ -4,7 +4,7 @@ export function error(status, mensaje) {
   return Response.json({ error: mensaje }, { status });
 }
 
-import { buscarActividad } from "./_datos.js";
+import { buscarActividad, buscarDocente } from "./_datos.js";
 
 // Qué permite un código: el general (práctica libre, fuera del aula) o el de una actividad que creó la docente.
 // Devuelve { guia, actividad } o null si el código no sirve.
@@ -17,6 +17,12 @@ export async function modoDeAcceso(codigo) {
     const a = await buscarActividad(codigo);
     if (a) return { guia: a.guia, actividad: a.nombre || "" };
   } catch (e) { console.error("Actividades", e.message); }
+  // Códigos individuales de docentes (D1 a D6): pueden conversar con la paciente como práctica libre.
+  // Las entrevistas quedan marcadas «Prueba interna D1» para separarlas de las de estudiantes.
+  try {
+    const d = await buscarDocente(codigo);
+    if (d) return { guia: "libre", actividad: "Prueba interna " + d.etiqueta, id: "prueba-" + String(d.etiqueta).toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 30) };
+  } catch (e) { console.error("Docentes", e.message); }
   return null;
 }
 
