@@ -871,33 +871,41 @@ function pintarDocentes() {
     };
     const bB = el("button", "Borrar", "peligro"); bB.type = "button";
     bB.onclick = () => { if (confirm(`¿Borrar el código de ${d.etiqueta}? Esa persona ya no podrá entrar.`)) accionDocente({ accion: "docenteBorrar", codigo: d.codigo }); };
-    // Correo: se abre tu programa de correo con el mensaje listo. La app no guarda ni envía el correo.
+    // Correo: se prepara el mensaje en Gmail, Outlook web, tu programa de correo o se copia. La app no guarda ni envía el correo.
     const correo = el("div"); correo.style.cssText = "flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center";
     const inpC = document.createElement("input"); inpC.type = "email"; inpC.placeholder = "correo de la persona (no se guarda)"; inpC.setAttribute("aria-label", "Correo de " + d.etiqueta); inpC.style.cssText = "flex:1 1 260px;min-width:200px";
-    const bE = el("button", "Enviar por correo"); bE.type = "button";
-    bE.onclick = () => {
+    const preparar = () => {
       const para = inpC.value.trim();
-      if (para && !inpC.checkValidity()) { $("estadoDoc").textContent = "Revisa el correo: no parece una dirección válida."; return; }
-      if (!d.activo && !confirm(`El código de ${d.etiqueta} está desactivado y no funcionará. ¿Preparar el correo igual?`)) return;
-      const cuerpo = [
-        "Hola,", "",
-        "Te invito a probar la plataforma Paciente Virtual (una paciente simulada con IA para entrenar la anamnesis), como parte de las pruebas internas del Centro de Simulación.", "",
-        "Enlace: " + location.origin,
-        "Tu código personal: " + d.codigo, "",
-        "Cómo usarlo:",
-        "1. Para revisar personajes, entrevistas y evaluaciones: entra al enlace, abre la pestaña «Docente» y escribe tu código.",
-        "2. Para conversar con la paciente: en la pantalla de inicio, pestaña «Estudiante», escribe el mismo código.", "",
-        "El código es personal; por favor no lo compartas. Si tienes problemas para entrar, respóndeme este correo.", "",
-        "Saludos,", "Andrea · Centro de Simulación USS",
-      ].join("\r\n");
-      abrirCorreo("mailto:" + encodeURIComponent(para).replace(/%40/g, "@") + "?subject=" + encodeURIComponent("Paciente Virtual: tu código de ingreso (" + d.etiqueta + ")") + "&body=" + encodeURIComponent(cuerpo));
-      $("estadoDoc").textContent = `Se abrió tu programa de correo con el mensaje para ${d.etiqueta}. Revísalo y envíalo desde ahí.`;
+      if (para && !inpC.checkValidity()) { $("estadoDoc").textContent = "Revisa el correo: no parece una dirección válida."; return null; }
+      if (!d.activo && !confirm(`El código de ${d.etiqueta} está desactivado y no funcionará. ¿Preparar el correo igual?`)) return null;
+      return { para, asunto: "Paciente Virtual: tu código de ingreso (" + d.etiqueta + ")", cuerpo: mensajeCorreo(d) };
     };
-    correo.append(inpC, bE);
+    const botonCorreo = (texto, accion) => { const b = el("button", texto); b.type = "button"; b.onclick = () => { const m = preparar(); if (m) accion(m); }; return b; };
+    correo.append(inpC,
+      botonCorreo("Enviar con Gmail", m => { abrirCorreo("https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(m.para) + "&su=" + encodeURIComponent(m.asunto) + "&body=" + encodeURIComponent(m.cuerpo)); $("estadoDoc").textContent = `Se abrió Gmail con el mensaje para ${d.etiqueta}. Revísalo y envíalo desde ahí.`; }),
+      botonCorreo("Enviar con Outlook", m => { abrirCorreo("https://outlook.office.com/mail/deeplink/compose?to=" + encodeURIComponent(m.para) + "&subject=" + encodeURIComponent(m.asunto) + "&body=" + encodeURIComponent(m.cuerpo)); $("estadoDoc").textContent = `Se abrió Outlook con el mensaje para ${d.etiqueta}. Si te pide iniciar sesión, hazlo y vuelve a presionar el botón.`; }),
+      botonCorreo("Copiar mensaje", async m => {
+        try { await navigator.clipboard.writeText("Asunto: " + m.asunto + "\r\n\r\n" + m.cuerpo); $("estadoDoc").textContent = `Mensaje para ${d.etiqueta} copiado. Pégalo en un correo nuevo.`; }
+        catch (e) { $("estadoDoc").textContent = "No se pudo copiar. Prueba con Gmail u Outlook."; }
+      }),
+      botonCorreo("Programa de correo", m => { abrirCorreo("mailto:" + encodeURIComponent(m.para).replace(/%40/g, "@") + "?subject=" + encodeURIComponent(m.asunto) + "&body=" + encodeURIComponent(m.cuerpo), true); $("estadoDoc").textContent = `Si no se abrió ningún programa de correo, usa Gmail, Outlook o Copiar mensaje.`; }));
     fila.append(info, act, bC, bB, correo); cont.append(fila);
   }
 }
-function abrirCorreo(url) { location.href = url; }
+function mensajeCorreo(d) {
+  return [
+    "Hola,", "",
+    "Te invito a probar la plataforma Paciente Virtual (una paciente simulada con IA para entrenar la anamnesis), como parte de las pruebas internas del Centro de Simulación.", "",
+    "Enlace: " + location.origin,
+    "Tu código personal: " + d.codigo, "",
+    "Cómo usarlo:",
+    "1. Para revisar personajes, entrevistas y evaluaciones: entra al enlace, abre la pestaña «Docente» y escribe tu código.",
+    "2. Para conversar con la paciente: en la pantalla de inicio, pestaña «Estudiante», escribe el mismo código.", "",
+    "El código es personal; por favor no lo compartas. Si tienes problemas para entrar, respóndeme este correo.", "",
+    "Saludos,", "Andrea · Centro de Simulación USS",
+  ].join("\r\n");
+}
+function abrirCorreo(url, mismaVentana) { if (mismaVentana) location.href = url; else window.open(url, "_blank", "noopener"); }
 async function accionDocente(cuerpo) {
   $("estadoDoc").textContent = "Guardando…";
   try {
