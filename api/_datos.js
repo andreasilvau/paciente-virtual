@@ -210,7 +210,7 @@ export function generarCodigoDocente() {
 }
 export async function listarDocentes() {
   if (!supabaseConfigurado) return [];
-  return pedirSupabase("docentes?select=*&order=etiqueta.asc");
+  return pedirSupabase("docentes_codigos?select=*&order=etiqueta.asc");
 }
 export async function buscarDocente(codigo) {
   codigo = normalizarCodigo(codigo);
@@ -220,16 +220,16 @@ export async function buscarDocente(codigo) {
 }
 export async function crearDocente(etiqueta) {
   if (!supabaseConfigurado) throw new Error("Para crear códigos de docente falta configurar Supabase en Vercel.");
-  const r = await pedirSupabase("docentes", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ codigo: generarCodigoDocente(), etiqueta }) });
+  const r = await pedirSupabase("docentes_codigos", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ codigo: generarCodigoDocente(), etiqueta }) });
   cacheDoc = null;
   return Array.isArray(r) ? r[0] : r;
 }
 export async function cambiarEstadoDocente(codigo, activo) {
-  await pedirSupabase("docentes?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ activo: Boolean(activo) }) });
+  await pedirSupabase("docentes_codigos?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ activo: Boolean(activo) }) });
   cacheDoc = null;
 }
 export async function borrarDocente(codigo) {
-  await pedirSupabase("docentes?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "DELETE" });
+  await pedirSupabase("docentes_codigos?codigo=eq." + encodeURIComponent(normalizarCodigo(codigo)), { method: "DELETE" });
   cacheDoc = null;
 }
 // Anota el último ingreso, como máximo una vez cada 10 minutos por código.
@@ -239,6 +239,6 @@ export async function registrarAccesoDocente(codigo) {
   if (ahora - (ultimoRegistroDoc.get(codigo) || 0) < 600_000) return;
   ultimoRegistroDoc.set(codigo, ahora);
   try {
-    await pedirSupabase("docentes?codigo=eq." + encodeURIComponent(codigo), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ultimo_acceso: new Date().toISOString() }) });
+    await pedirSupabase("docentes_codigos?codigo=eq." + encodeURIComponent(codigo), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ultimo_acceso: new Date().toISOString() }) });
   } catch (e) { console.error("Acceso docente", e.message); }
 }

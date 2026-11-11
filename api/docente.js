@@ -1,7 +1,7 @@
 // Página de docente: ver y editar personajes, listar voces de ElevenLabs y probarlas.
 // Dos tipos de código, ambos distintos del de los estudiantes:
 // - DOCENTE_CODE (administración): puede todo, incluida la creación de códigos individuales.
-// - Códigos individuales de la tabla «docentes» (etiqueta D1…D6): pueden entrevistar y ver personajes, entrevistas y evaluaciones, pero no editar ni borrar.
+// - Códigos individuales de la tabla «docentes_codigos» (etiqueta D1…D6): pueden entrevistar y ver personajes, entrevistas y evaluaciones, pero no editar ni borrar.
 import { error } from "./_lib.js";
 import { PARTE_A, PARTE_B } from "./_rubrica.js";
 import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion, listarEntrevistas, verEntrevista, borrarEntrevista, leerAjuste, guardarAjuste, listarDocentes, buscarDocente, crearDocente, cambiarEstadoDocente, borrarDocente, registrarAccesoDocente } from "./_datos.js";
