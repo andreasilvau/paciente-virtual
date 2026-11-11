@@ -2,7 +2,7 @@
 // Protegida con DOCENTE_CODE (distinto del código de los estudiantes).
 import { error } from "./_lib.js";
 import { PARTE_A, PARTE_B } from "./_rubrica.js";
-import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion } from "./_datos.js";
+import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion, listarEntrevistas, verEntrevista, borrarEntrevista, leerAjuste, guardarAjuste } from "./_datos.js";
 import { sintetizar } from "./hablar.js";
 
 function verificarDocente(request) {
@@ -33,6 +33,9 @@ export async function GET(request) {
     if (q.get("rubrica")) return Response.json({ parteA: PARTE_A, parteB: PARTE_B });
     if (q.get("pronunciacion")) return Response.json({ lista: await listarPronunciacion() });
     if (q.get("actividades")) return Response.json({ actividades: await listarActividades(), editable: supabaseConfigurado });
+    if (q.get("entrevistas")) return Response.json({ entrevistas: await listarEntrevistas({ completo: q.get("completo") === "1" }), editable: supabaseConfigurado });
+    if (q.get("entrevista")) return Response.json({ entrevista: await verEntrevista(q.get("entrevista")) });
+    if (q.get("consentimiento")) return Response.json({ consentimiento: (await leerAjuste("consentimiento")) || { activo: false, texto: "" }, editable: supabaseConfigurado });
     return Response.json({ casos: await listarCasos({ incluirInactivos: true }), editable: supabaseConfigurado });
   } catch (e) { return error(502, e.message); }
 }
@@ -89,6 +92,13 @@ export async function POST(request) {
   }
   if (body.accion === "borrarCaso") {
     try { await borrarCaso(body.id); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "borrarEntrevista") {
+    try { await borrarEntrevista(body.id); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "consentimiento") {
+    const valor = { activo: Boolean(body.activo), texto: String(body.texto || "").slice(0, 6000), version: new Date().toISOString().slice(0, 10) };
+    try { await guardarAjuste("consentimiento", valor); return Response.json({ consentimiento: valor }); } catch (e) { return error(502, e.message); }
   }
   if (body.accion === "borrarActividad") {
     try { await borrarActividad(body.codigo); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }

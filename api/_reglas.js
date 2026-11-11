@@ -97,6 +97,12 @@ En "Hitos del caso" escribe una línea por cada hito de la lista de abajo, empez
 
 En cada uno de los cuatro primeros apartados cita una intervención concreta de la estudiante que funcionó o que se puede mejorar. Considera el desafío principal de este caso: ${c.desafio}${c.foco_cicaa ? ` Las tareas CICAA en que se centra este caso son: ${c.foco_cicaa}; dales más detalle en tu retroalimentación.` : ""} Menciona si la estudiante llegó a descubrir la información clave que ${elP} solo revela si se lo preguntan. Cierra con una línea titulada "Para la próxima vez" con una sola sugerencia prioritaria. Texto plano, sin asteriscos ni símbolos de formato. No evalúes ${alP} ni pongas nota.
 
+Después de todo lo anterior escribe una línea que diga exactamente ===BREVE=== y, debajo, una versión breve para la estudiante con estos tres títulos, cada uno en su propia línea:
+Lo que hiciste bien
+Para mejorar
+Para la próxima vez
+Bajo los dos primeros, exactamente dos líneas que empiecen con "- "; bajo el tercero, una sola frase concreta que pueda usar en su próxima entrevista. Cada línea con un máximo de 25 palabras, en segunda persona, refiriéndote a algo que hizo o dijo. Céntrate en habilidades de comunicación y de anamnesis. En esta versión breve NO reveles información que ${elP} solo cuenta si se lo preguntan (datos ocultos, preocupación oculta, motivo real), porque la estudiante puede volver a entrevistar este mismo caso: habla de lo que conviene preguntar o explorar, no de lo que había que descubrir.
+
 Hitos que la estudiante debía lograr:
 ${(c.hitos || "").trim() || "(sin hitos definidos: omite ese apartado)"}
 ${(c.rubrica || "").trim() ? `

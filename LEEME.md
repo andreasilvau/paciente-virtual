@@ -62,3 +62,14 @@ En `/docente.html` se editan las capas, se activa o desactiva cada personaje y s
 - El código general (`ACCESS_CODE`) sirve para practicar fuera del aula: cada estudiante decide si usa la guía de los tres momentos.
 - En el panel docente, «Actividades y guía» crea códigos para cada clase o evaluación, cada uno con su regla: guía siempre visible, oculta (evaluación) o a elección del estudiante. Se pueden desactivar o borrar.
 - Los códigos de actividad se guardan en la tabla `actividades` de Supabase.
+
+## Evaluación: lo que ve cada quien
+
+- **Estudiante:** al terminar ve su porcentaje de logro (Parte A, comunicación clínica CICAA; Parte B, contenido clínico) y una retroalimentación breve (2 fortalezas, 2 aspectos a mejorar, 1 sugerencia). La versión breve no revela la información oculta del caso, para que se pueda repetir en el postest.
+- **Docente (panel → Entrevistas):** cada entrevista queda guardada con un código seudónimo que genera la app (P-XXXXXX, sin nombre ni correo): transcripción, rúbrica completa con evidencia y retroalimentación detallada. Se puede filtrar por caso, actividad o participante y descargar una planilla .csv con el puntaje de cada ítem.
+- **Consentimiento (panel → Consentimiento):** si se activa, se muestra antes de la primera entrevista. Quien no acepta puede practicar, pero no se guarda nada. Al cambiar el texto se vuelve a pedir.
+- Las tablas se crean con `sql/2026-11-11_entrevistas_ajustes.sql`. Los casos de esa fecha están en `sql/2026-11-11_casos.sql`; los casos anteriores quedaron respaldados en la tabla `casos_archivo`.
+
+## Casos pediátricos
+
+Se entrevista a la persona cuidadora (por ejemplo, el nombre del caso termina en «(entrevista a la madre)»). La niña o el niño interviene con frases cortas que el modelo escribe entre dobles llaves, `{{Florencia: …}}`: se muestran en la transcripción, pero no se leen en voz alta.

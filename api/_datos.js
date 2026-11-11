@@ -161,3 +161,39 @@ export async function guardarPronunciacion(lista) {
   cachePron = null;
   return filas;
 }
+
+// Entrevistas guardadas (código seudónimo, sin nombre ni correo) para la evaluación docente.
+const COLUMNAS_RESUMEN = "id,creado,participante,actividad,actividad_nombre,caso,caso_nombre,nivel,guia,duracion_seg,intervenciones,consentimiento,logro_a,logro_b";
+export async function guardarEntrevista(e) {
+  if (!supabaseConfigurado) return null;
+  const filas = await pedirSupabase("entrevistas?select=id", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(e) });
+  return filas && filas[0] ? filas[0].id : null;
+}
+export async function listarEntrevistas({ completo = false } = {}) {
+  if (!supabaseConfigurado) return [];
+  const columnas = completo ? COLUMNAS_RESUMEN + ",rubrica" : COLUMNAS_RESUMEN;
+  return pedirSupabase(`entrevistas?select=${columnas}&order=creado.desc&limit=2000`);
+}
+export async function verEntrevista(id) {
+  const filas = await pedirSupabase(`entrevistas?id=eq.${encodeURIComponent(Number(id) || 0)}&select=*`);
+  return filas && filas[0] ? filas[0] : null;
+}
+export async function borrarEntrevista(id) {
+  await pedirSupabase(`entrevistas?id=eq.${encodeURIComponent(Number(id) || 0)}`, { method: "DELETE" });
+}
+
+// Ajustes generales de la plataforma (por ahora, el consentimiento informado).
+let cacheAjustes = null, horaAjustes = 0;
+export async function leerAjuste(clave) {
+  if (!supabaseConfigurado) return null;
+  if (!cacheAjustes || Date.now() - horaAjustes > 60_000) {
+    const filas = await pedirSupabase("ajustes?select=clave,valor");
+    cacheAjustes = Object.fromEntries((filas || []).map(f => [f.clave, f.valor]));
+    horaAjustes = Date.now();
+  }
+  return cacheAjustes[clave] ?? null;
+}
+export async function guardarAjuste(clave, valor) {
+  await pedirSupabase("ajustes", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ clave, valor, actualizado: new Date().toISOString() }) });
+  cacheAjustes = null;
+}

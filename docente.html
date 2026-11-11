@@ -109,6 +109,21 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .actividad .cod { font: 700 1.05rem/1.2 var(--display); }
 @media (max-width: 760px) { .actividad { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .lista { position: static; } }
+.filtros { display: flex; flex-wrap: wrap; gap: 10px; }
+.filtros label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 600; }
+.tabla-ent { overflow-x: auto; }
+.tabla-ent table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.tabla-ent th, .tabla-ent td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tabla-ent th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.tabla-ent td.num { font-variant-numeric: tabular-nums; }
+.detalle-ent h3 { margin: 18px 0 6px; }
+.detalle-ent .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .9rem; color: var(--muted); }
+.detalle-ent .texto-largo { white-space: pre-wrap; background: var(--bg); border-radius: 8px; padding: 12px; font-size: .92rem; }
+.detalle-ent .item-r { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: .9rem; }
+.detalle-ent .item-r small { display: block; color: var(--muted); }
+.detalle-ent .pt { font-weight: 700; text-align: center; border-radius: 6px; padding: 2px 0; background: var(--bg); }
+.detalle-ent .turno-t { padding: 4px 0; font-size: .92rem; }
+.detalle-ent .turno-t b { color: var(--muted); }
 .transferir { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .transferir button { font-size: .85rem; padding-inline: 6px; }
 </style>
@@ -140,6 +155,8 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       </div>
       <button type="button" id="btnActividades" class="item" style="margin-top:12px"><b>Actividades y guía</b><small>Códigos para tus clases</small></button>
       <button type="button" id="btnPronunciacion" class="item"><b>Pronunciación</b><small>Cómo dice la voz ciertas palabras</small></button>
+      <button type="button" id="btnEntrevistas" class="item" style="margin-top:12px"><b>Entrevistas</b><small>Evaluación completa de cada estudiante</small></button>
+      <button type="button" id="btnConsentimiento" class="item"><b>Consentimiento</b><small>Texto que aceptan antes de entrevistar</small></button>
       <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
     </nav>
 
@@ -157,6 +174,42 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       </form>
       <div id="listaActividades" style="display:flex;flex-direction:column;gap:10px"></div>
       <p id="estadoAct" role="status" class="ayuda"></p>
+    </section>
+
+    <section id="vistaEntrevistas" class="actividades" hidden aria-labelledby="tituloEnt">
+      <div class="caja" style="display:flex;flex-direction:column;gap:8px">
+        <h2 id="tituloEnt">Entrevistas registradas</h2>
+        <p>Cada entrevista terminada queda aquí con el código seudónimo de la o el estudiante (sin nombre ni correo): la transcripción, la rúbrica completa con su evidencia y la retroalimentación detallada. La o el estudiante solo ve su porcentaje de logro y una retroalimentación breve.</p>
+        <div class="filtros">
+          <label>Caso <select id="filtroCaso"><option value="">Todos</option></select></label>
+          <label>Actividad <select id="filtroActividad"><option value="">Todas</option></select></label>
+          <label>Participante <input type="search" id="filtroParticipante" placeholder="P-…"></label>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" id="btnActualizarEnt">Actualizar</button>
+          <button type="button" id="btnCsvEnt">Descargar planilla (.csv)</button>
+        </div>
+        <p id="estadoEnt" role="status" class="ayuda"></p>
+      </div>
+      <div class="caja tabla-ent" id="cajaTablaEnt">
+        <table>
+          <thead><tr><th>Fecha</th><th>Participante</th><th>Caso</th><th>Actividad</th><th>Duración</th><th>Parte A</th><th>Parte B</th><th></th></tr></thead>
+          <tbody id="tablaEnt"></tbody>
+        </table>
+      </div>
+      <div class="caja detalle-ent" id="detalleEnt" hidden></div>
+    </section>
+
+    <section id="vistaConsentimiento" class="actividades" hidden aria-labelledby="tituloCons">
+      <div class="caja" style="display:flex;flex-direction:column;gap:10px">
+        <h2 id="tituloCons">Consentimiento informado</h2>
+        <p>Si lo activas, la o el estudiante lo ve al entrar, antes de su primera entrevista. Si acepta, sus entrevistas se guardan para la evaluación; si no acepta, puede practicar igual, pero nada se guarda. Al cambiar el texto, se vuelve a pedir la aceptación.</p>
+        <p class="ayuda">El texto debe ser el aprobado por el Comité Ético Científico. El que aparece por defecto es solo una base para que lo completes.</p>
+        <label class="check"><input type="checkbox" id="consActivo"> Pedir consentimiento antes de entrevistar</label>
+        <textarea id="consTexto" rows="16"></textarea>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="primario" id="btnGuardarCons">Guardar consentimiento</button></div>
+        <p id="estadoCons" role="status" class="ayuda"></p>
+      </div>
     </section>
 
     <section id="vistaPronunciacion" class="actividades" hidden aria-labelledby="tituloPron">
@@ -425,9 +478,13 @@ function pintarLista() {
   }
 }
 
+// Muestra una sola vista a la vez (editor de personaje u otra sección) y marca su botón en la lista.
+const VISTAS = { editor: null, vistaActividades: "btnActividades", vistaPronunciacion: "btnPronunciacion", vistaEntrevistas: "btnEntrevistas", vistaConsentimiento: "btnConsentimiento" };
+function verVista(id) {
+  for (const [v, b] of Object.entries(VISTAS)) { $(v).hidden = v !== id; if (b) $(b).setAttribute("aria-current", String(v === id)); }
+}
 function abrir(c) {
-  $("editor").hidden = false; $("vistaActividades").hidden = true; $("vistaPronunciacion").hidden = true;
-  $("btnActividades").setAttribute("aria-current", "false"); $("btnPronunciacion").setAttribute("aria-current", "false");
+  verVista("editor");
   nuevo = !c; actual = c || null; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
   $("btnBorrar").hidden = nuevo; $("btnBorrar").disabled = !editable;
   if (nuevo) verDimension("clinica");
@@ -453,6 +510,144 @@ function fraseDe(c) {
   const m = String(c.guion_clinico || "").match(/[“"«]([^"”»]{6,160})[”"»]/);
   return m ? m[1] : "Hola, buenas tardes. Vengo a la consulta.";
 }
+/* Entrevistas registradas: evaluación completa para la docente */
+let entrevistas = [];
+const fecha = iso => new Date(iso).toLocaleString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const pct = v => v === null || v === undefined ? "—" : String(v).replace(".", ",") + " %";
+const dur = s => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "—";
+async function cargarEntrevistas() {
+  $("estadoEnt").textContent = "Cargando…";
+  try {
+    const d = await (await api("/api/docente?entrevistas=1")).json();
+    entrevistas = d.entrevistas || [];
+    const opciones = (sel, valores) => { const v = $(sel).value; $(sel).length = 1; for (const [k, t] of valores) { const o = document.createElement("option"); o.value = k; o.textContent = t; $(sel).append(o); } $(sel).value = v; };
+    opciones("filtroCaso", [...new Map(entrevistas.map(e => [e.caso, `${e.caso_nombre || e.caso} · ${e.nivel || ""}`]))]);
+    opciones("filtroActividad", [...new Map(entrevistas.map(e => [e.actividad, e.actividad_nombre || e.actividad]))]);
+    pintarEntrevistas();
+  } catch (e) { $("estadoEnt").textContent = e.message; }
+}
+function filtradas() {
+  const c = $("filtroCaso").value, a = $("filtroActividad").value, p = $("filtroParticipante").value.trim().toUpperCase();
+  return entrevistas.filter(e => (!c || e.caso === c) && (!a || e.actividad === a) && (!p || (e.participante || "").includes(p)));
+}
+function pintarEntrevistas() {
+  const lista = filtradas(), cuerpo = $("tablaEnt"); cuerpo.textContent = "";
+  $("estadoEnt").textContent = entrevistas.length ? `${lista.length} de ${entrevistas.length} entrevistas.` : "Todavía no hay entrevistas registradas.";
+  for (const e of lista) {
+    const tr = document.createElement("tr");
+    for (const [v, num] of [[fecha(e.creado)], [e.participante], [`${e.caso_nombre || e.caso} · ${e.nivel || ""}`], [e.actividad_nombre || e.actividad], [dur(e.duracion_seg), 1], [pct(e.logro_a), 1], [pct(e.logro_b), 1]]) {
+      const td = document.createElement("td"); td.textContent = v ?? ""; if (num) td.className = "num"; tr.append(td);
+    }
+    const td = document.createElement("td"); const b = document.createElement("button"); b.type = "button"; b.textContent = "Ver"; b.onclick = () => verEntrevista(e.id); td.append(b); tr.append(td);
+    cuerpo.append(tr);
+  }
+}
+for (const id of ["filtroCaso", "filtroActividad", "filtroParticipante"]) $(id).addEventListener("input", pintarEntrevistas);
+$("btnActualizarEnt").onclick = cargarEntrevistas;
+$("btnEntrevistas").onclick = () => {
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return;
+  cambios = false; verVista("vistaEntrevistas"); $("detalleEnt").hidden = true; $("cajaTablaEnt").hidden = false; cargarEntrevistas();
+};
+function el(tag, texto, clase) { const x = document.createElement(tag); if (texto !== undefined) x.textContent = texto; if (clase) x.className = clase; return x; }
+async function verEntrevista(id) {
+  const caja = $("detalleEnt"); caja.textContent = "Cargando…"; caja.hidden = false; $("cajaTablaEnt").hidden = true;
+  try {
+    const { entrevista: e } = await (await api("/api/docente?entrevista=" + id)).json();
+    caja.textContent = "";
+    const volver = el("button", "← Volver a la lista"); volver.type = "button"; volver.onclick = () => { caja.hidden = true; $("cajaTablaEnt").hidden = false; };
+    caja.append(volver, el("h2", `${e.participante} · ${e.caso_nombre || e.caso} (${e.nivel || ""})`));
+    const meta = el("div", undefined, "meta");
+    for (const t of [fecha(e.creado), `Actividad: ${e.actividad_nombre || e.actividad || "—"}`, `Guía: ${e.guia || "—"}`, `Duración: ${dur(e.duracion_seg)}`, `Intervenciones: ${e.intervenciones ?? "—"}`, `Consentimiento: ${e.consentimiento === true ? "aceptado" : "no se pidió"}`]) meta.append(el("span", t));
+    caja.append(meta);
+    caja.append(el("h3", `Parte A · Comunicación clínica (CICAA): ${pct(e.logro_a)}`));
+    const r = e.rubrica;
+    const items = (parte, esA) => {
+      if (!parte) { caja.append(el("p", "No se pudo calcular esta parte.", "ayuda")); return; }
+      for (const g of parte.grupos) {
+        caja.append(el("p", `${g.grupo}: ${g.maximo ? pct(g.logro) : "no aplica"} (${g.obtenido} de ${g.maximo})`, "ayuda"));
+        for (const it of g.items) {
+          const f = el("div", undefined, "item-r");
+          f.append(el("span", esA ? String(it.puntaje) : (it.respuesta === "SI" ? "Sí" : it.respuesta === "NO" ? "No" : "NA"), "pt"));
+          const t = el("span", `${it.id}. ${it.texto}${esA ? "" : ` (${it.peso} pt)`}`); if (it.evidencia) t.append(el("small", it.evidencia));
+          f.append(t); caja.append(f);
+        }
+      }
+    };
+    items(r && r.comunicacion, true);
+    caja.append(el("h3", `Parte B · Contenido clínico: ${pct(e.logro_b)}`));
+    items(r && r.contenido, false);
+    caja.append(el("h3", "Retroalimentación completa (solo docente)"), el("div", e.feedback_completo || "—", "texto-largo"));
+    caja.append(el("h3", "Lo que vio la o el estudiante"), el("div", e.feedback_breve || "—", "texto-largo"));
+    caja.append(el("h3", "Transcripción"));
+    for (const t of e.transcripcion || []) { const p = el("p", undefined, "turno-t"); p.append(el("b", t.role === "user" ? "Estudiante: " : "Paciente: "), t.content); caja.append(p); }
+    const borrar = el("button", "Borrar esta entrevista", "peligro"); borrar.type = "button"; borrar.style.marginTop = "14px";
+    borrar.onclick = async () => {
+      if (!confirm(`¿Borrar la entrevista de ${e.participante}? No se puede deshacer.`)) return;
+      try { await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "borrarEntrevista", id: e.id }) }); caja.hidden = true; $("cajaTablaEnt").hidden = false; cargarEntrevistas(); }
+      catch (err) { aviso(err.message); }
+    };
+    caja.append(borrar);
+  } catch (err) { caja.textContent = err.message; }
+}
+// Planilla para análisis: una fila por entrevista, con el puntaje de cada ítem de la rúbrica.
+$("btnCsvEnt").onclick = async () => {
+  $("estadoEnt").textContent = "Preparando la planilla…";
+  try {
+    const d = await (await api("/api/docente?entrevistas=1&completo=1")).json();
+    const ids = new Set(filtradas().map(e => e.id));
+    const filas = (d.entrevistas || []).filter(e => ids.has(e.id));
+    const idsA = [], idsB = [];
+    for (const e of filas) if (e.rubrica) {
+      for (const g of e.rubrica.comunicacion.grupos) for (const it of g.items) if (!idsA.includes(it.id)) idsA.push(it.id);
+      for (const g of e.rubrica.contenido.grupos) for (const it of g.items) if (!idsB.includes(it.id)) idsB.push(it.id);
+    }
+    const num = v => v === null || v === undefined ? "" : String(v).replace(".", ",");
+    const celda = v => { const t = String(v ?? ""); return /[;"\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+    const cab = ["id", "fecha", "participante", "actividad", "actividad_nombre", "caso", "caso_nombre", "nivel", "guia", "duracion_seg", "intervenciones", "consentimiento", "logro_parte_a", "logro_parte_b", ...idsA, ...idsB];
+    const lineas = [cab.join(";")];
+    for (const e of filas) {
+      const valores = new Map();
+      if (e.rubrica) {
+        for (const g of e.rubrica.comunicacion.grupos) for (const it of g.items) valores.set(it.id, it.puntaje);
+        for (const g of e.rubrica.contenido.grupos) for (const it of g.items) valores.set(it.id, it.respuesta);
+      }
+      lineas.push([e.id, fecha(e.creado), e.participante, e.actividad, e.actividad_nombre, e.caso, e.caso_nombre, e.nivel, e.guia, e.duracion_seg, e.intervenciones, e.consentimiento === true ? "sí" : "", num(e.logro_a), num(e.logro_b), ...idsA.map(i => valores.get(i) ?? ""), ...idsB.map(i => valores.get(i) ?? "")].map(celda).join(";"));
+    }
+    const url = URL.createObjectURL(new Blob(["\ufeff" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = `entrevistas-paciente-virtual-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    $("estadoEnt").textContent = `Planilla con ${filas.length} entrevistas descargada.`;
+  } catch (e) { $("estadoEnt").textContent = e.message; }
+};
+
+/* Consentimiento informado */
+const CONSENTIMIENTO_BASE = `Proyecto: Paciente Virtual Conversacional — Centro de Simulación, Universidad San Sebastián.
+Investigadora responsable: [nombre y contacto].
+
+Te invitamos a participar en un estudio sobre el uso de una paciente virtual para entrenar la anamnesis. Si aceptas, tus entrevistas con la paciente virtual (la conversación transcrita y su evaluación con la rúbrica) se guardarán asociadas a un código seudónimo que genera la aplicación, sin tu nombre, RUT ni correo.
+
+Tu participación es voluntaria: si no aceptas, puedes usar la aplicación igual y nada se guardará. Tu decisión no afecta tus calificaciones. Puedes retirar tu consentimiento en cualquier momento escribiendo a [correo de contacto] con tu código.
+
+Los datos se usarán solo con fines de investigación y mejora docente, y se resguardarán de acuerdo con la normativa vigente. [Completar con el texto aprobado por el Comité Ético Científico y su número de aprobación.]`;
+$("btnConsentimiento").onclick = async () => {
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return;
+  cambios = false; verVista("vistaConsentimiento"); $("estadoCons").textContent = "Cargando…";
+  try {
+    const { consentimiento: c, editable: ed } = await (await api("/api/docente?consentimiento=1")).json();
+    $("consActivo").checked = Boolean(c && c.activo);
+    $("consTexto").value = (c && c.texto) || CONSENTIMIENTO_BASE;
+    $("btnGuardarCons").disabled = !ed;
+    $("estadoCons").textContent = c && c.activo ? `Activo desde la versión del ${c.version}.` : "Desactivado: las entrevistas se guardan sin pedir consentimiento.";
+  } catch (e) { $("estadoCons").textContent = e.message; }
+};
+$("btnGuardarCons").onclick = async () => {
+  if ($("consActivo").checked && /\[(nombre|correo|completar)/i.test($("consTexto").value) && !confirm("El texto todavía tiene partes entre corchetes por completar. ¿Guardar igual?")) return;
+  try {
+    const { consentimiento: c } = await (await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "consentimiento", activo: $("consActivo").checked, texto: $("consTexto").value }) })).json();
+    $("estadoCons").textContent = c.activo ? "Guardado. Las y los estudiantes lo verán la próxima vez que entren." : "Guardado y desactivado.";
+  } catch (e) { $("estadoCons").textContent = e.message; }
+};
+
 /* Exportar e importar personajes (archivo .json) */
 const FORMATO = "paciente-virtual-casos";
 $("btnExportar").onclick = () => {
@@ -570,8 +765,7 @@ let actividades = [];
 $("btnActividades").onclick = async () => {
   if (cambios && !confirm("Tienes cambios sin guardar. ¿Ir a actividades igual?")) return;
   cambios = false; actual = null; nuevo = false; pintarLista();
-  $("editor").hidden = true; $("vistaActividades").hidden = false; $("vistaPronunciacion").hidden = true;
-  $("btnActividades").setAttribute("aria-current", "true"); $("btnPronunciacion").setAttribute("aria-current", "false");
+  verVista("vistaActividades");
   if (!$("a_codigo").value) $("a_codigo").value = "box-" + Math.floor(1000 + Math.random() * 9000);
   await cargarActividades();
 };
@@ -848,8 +1042,7 @@ function filaPron(escrito = "", dice = "") {
 $("btnPronunciacion").onclick = async () => {
   if (cambios && !confirm("Tienes cambios sin guardar. ¿Ir a pronunciación igual?")) return;
   cambios = false; actual = null; nuevo = false; pintarLista();
-  $("editor").hidden = true; $("vistaActividades").hidden = true; $("vistaPronunciacion").hidden = false;
-  $("btnPronunciacion").setAttribute("aria-current", "true"); $("btnActividades").setAttribute("aria-current", "false");
+  verVista("vistaPronunciacion");
   $("estadoPron").textContent = "Cargando…"; $("listaPron").textContent = "";
   try {
     const d = await (await api("/api/docente?pronunciacion=1")).json();

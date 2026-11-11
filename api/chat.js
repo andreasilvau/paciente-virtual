@@ -1,6 +1,6 @@
 // Respuestas de la paciente y retroalimentación final, con la API de Claude.
-import { error, verificarAcceso } from "./_lib.js";
-import { buscarCaso } from "./_datos.js";
+import { error, verificarAcceso, modoDeAcceso } from "./_lib.js";
+import { buscarCaso, guardarEntrevista, leerAjuste, supabaseConfigurado } from "./_datos.js";
 import { reglasPaciente, reglasFeedback } from "./_reglas.js";
 
 // Solo para pacientes con cuerpo 3D: una etiqueta inicial que la app usa para el gesto de la cara y luego borra.
@@ -109,6 +109,57 @@ export async function POST(request) {
         [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 6000);
       try { return Response.json({ rubrica: calcularRubrica(texto, caso.rubrica_na) }); }
       catch (e) { console.error("Rúbrica", e.message, texto.slice(0, 300)); return error(502, "No se pudo calcular la rúbrica. Vuelve a intentarlo."); }
+    }
+    if (body.modo === "evaluacion") {
+      // Evaluación completa (rúbrica + retroalimentación detallada) para el docente; el estudiante recibe solo la versión breve.
+      if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
+      const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
+      const mensajes = [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }];
+      const [txtRub, txtFb] = await Promise.all([
+        preguntarAClaude(MODELO_FEEDBACK, reglasRubrica(caso), mensajes, 6000).catch(e => { console.error("Rúbrica", e.message); return ""; }),
+        preguntarAClaude(MODELO_FEEDBACK, reglasFeedback(caso), mensajes, 4500),
+      ]);
+      let rubrica = null;
+      try { if (txtRub) rubrica = calcularRubrica(txtRub, caso.rubrica_na); } catch (e) { console.error("Rúbrica", e.message, txtRub.slice(0, 300)); }
+      const [completo, breve = ""] = String(txtFb || "").split("===BREVE===").map(s => s.trim());
+      const hitos = completo.split("\n").map(l => l.trim().match(/^[-•]?\s*(Logrado|En parte|Pendiente)\s*:/i)).filter(Boolean);
+      const resumenHitos = { logrados: hitos.filter(h => /logrado/i.test(h[1])).length, total: hitos.length };
+
+      // Se guarda solo con código de participante válido y, si el consentimiento está activado, solo si la estudiante aceptó.
+      let guardado = false, motivoNoGuardado = "";
+      const participante = String(body.participante || "").toUpperCase();
+      if (!supabaseConfigurado) motivoNoGuardado = "sin base de datos";
+      else if (!/^P-[A-Z0-9]{6}$/.test(participante)) motivoNoGuardado = "sin código de participante";
+      else {
+        try {
+          const cons = await leerAjuste("consentimiento").catch(() => null);
+          if (cons && cons.activo && body.consentimiento !== true) motivoNoGuardado = "sin consentimiento";
+          else {
+            const codigo = (request.headers.get("x-codigo") || "").trim();
+            const general = codigo && codigo === (process.env.ACCESS_CODE || "").trim();
+            const acceso = general ? null : await modoDeAcceso(codigo);
+            await guardarEntrevista({
+              participante,
+              actividad: general ? "general" : codigo.toLowerCase().slice(0, 40),
+              actividad_nombre: general ? "Práctica libre" : (acceso && acceso.actividad) || "",
+              caso: caso.id, caso_nombre: caso.nombre, nivel: caso.nivel_dificultad,
+              guia: String(body.guia || "").slice(0, 20),
+              duracion_seg: Math.max(0, Math.round(Number(body.duracion) || 0)),
+              intervenciones: turnos.filter(t => t.role === "user").length,
+              consentimiento: cons && cons.activo ? true : null,
+              logro_a: rubrica ? rubrica.comunicacion.logro : null,
+              logro_b: rubrica ? rubrica.contenido.logro : null,
+              transcripcion: turnos, rubrica, feedback_completo: completo, feedback_breve: breve,
+            });
+            guardado = true;
+          }
+        } catch (e) { console.error("Guardar entrevista", e.message); motivoNoGuardado = "error al guardar"; }
+      }
+      return Response.json({
+        breve: breve || completo,
+        logro: rubrica ? { comunicacion: rubrica.comunicacion.logro, contenido: rubrica.contenido.logro } : null,
+        hitos: resumenHitos, guardado, motivoNoGuardado,
+      });
     }
     if (body.modo === "feedback") {
       if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
