@@ -164,6 +164,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       <button type="button" id="btnEntrevistas" class="item" style="margin-top:12px"><b>Entrevistas</b><small>Evaluación completa de cada estudiante</small></button>
       <button type="button" id="btnConsentimiento" class="item"><b>Consentimiento</b><small>Texto que aceptan antes de entrevistar</small></button>
       <button type="button" id="btnDocentes" class="item" style="margin-top:12px" hidden><b>Docentes</b><small>Códigos de ingreso D1 a D6</small></button>
+      <button type="button" id="btnReportes" class="item" style="margin-top:12px"><b>Reportar un problema</b><small id="subReportes">Avisa una falla de la plataforma</small></button>
       <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
     </nav>
 
@@ -231,6 +232,27 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
         <p id="estadoDoc" role="status" class="ayuda"></p>
       </div>
       <div id="listaDocentes" style="display:flex;flex-direction:column;gap:10px"></div>
+    </section>
+
+    <section id="vistaReportes" class="actividades" hidden aria-labelledby="tituloRep">
+      <form id="formReporte" class="caja" style="display:flex;flex-direction:column;gap:10px">
+        <h2 id="tituloRep">Reportar un problema</h2>
+        <p>Si algo no funcionó o no se entendió, cuéntalo aquí: qué hiciste, qué pasó y qué esperabas. El reporte queda con tu etiqueta de sesión, sin nombre ni correo.</p>
+        <div class="campo"><label for="repTipo">¿Con qué tuviste el problema?</label>
+          <select id="repTipo"><option>Voz o micrófono</option><option>Respuestas de la paciente</option><option>Evaluación o retroalimentación</option><option>Pantalla o diseño</option><option>Ingreso o códigos</option><option selected>Otro</option></select></div>
+        <div class="campo"><label for="repTexto">¿Qué pasó?</label><textarea id="repTexto" rows="5" maxlength="3000" placeholder="ej. En la entrevista de Camila, la retroalimentación no mostró el porcentaje de logro."></textarea></div>
+        <div><button type="submit" class="primario" id="btnEnviarRep">Enviar reporte</button></div>
+        <p id="estadoRep" role="status" class="ayuda"></p>
+      </form>
+      <div id="cajaListaRep" hidden style="display:flex;flex-direction:column;gap:10px">
+        <div class="caja" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <h2 style="flex:1 1 200px">Reportes recibidos</h2>
+          <label class="check" style="font-weight:400"><input type="checkbox" id="repVerResueltos"> Mostrar resueltos</label>
+          <button type="button" id="btnActualizarRep">Actualizar</button>
+        </div>
+        <p id="estadoListaRep" role="status" class="ayuda"></p>
+        <div id="listaRep" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
     </section>
 
     <section id="vistaPronunciacion" class="actividades" hidden aria-labelledby="tituloPron">
@@ -454,7 +476,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 const $ = id => document.getElementById(id);
 const CAMPOS = ["nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "foco_cicaa", "orden", "activo", "desafio", "carreras",
   "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "cierre", "hitos", "voz_id", "rubrica"];
-let codigo = "", casos = [], voces = [], actual = null, nuevo = false, cambios = false, editable = true;
+let codigo = "", casos = [], voces = [], actual = null, nuevo = false, cambios = false, editable = true, esAdminSesion = false;
 const audio = new Audio();
 const guardar = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };
 const leer = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
@@ -478,6 +500,7 @@ async function cargar() {
     casos = d.casos || []; editable = d.editable;
     const esAdmin = (d.rol || "admin") === "admin";
     document.body.classList.toggle("solo-lectura", !esAdmin); $("btnDocentes").hidden = !esAdmin;
+    esAdminSesion = esAdmin; $("subReportes").textContent = esAdmin ? "Envía uno o revisa los recibidos" : "Avisa una falla de la plataforma";
     $("formAcceso").hidden = true; $("panel").hidden = false;
     if (!esAdmin) aviso(`Sesión ${d.etiqueta}: puedes revisar personajes, entrevistas y evaluaciones. Para conversar con la paciente, usa «Volver al inicio» e ingresa con tu código en la pestaña Estudiante. Editar o borrar lo hace administración.`);
     else if (!editable) aviso("Estás viendo los personajes del archivo de respaldo. Para editarlos, configura SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel.");
@@ -503,7 +526,7 @@ function pintarLista() {
 }
 
 // Muestra una sola vista a la vez (editor de personaje u otra sección) y marca su botón en la lista.
-const VISTAS = { editor: null, vistaActividades: "btnActividades", vistaPronunciacion: "btnPronunciacion", vistaEntrevistas: "btnEntrevistas", vistaConsentimiento: "btnConsentimiento", vistaDocentes: "btnDocentes" };
+const VISTAS = { editor: null, vistaActividades: "btnActividades", vistaPronunciacion: "btnPronunciacion", vistaEntrevistas: "btnEntrevistas", vistaConsentimiento: "btnConsentimiento", vistaDocentes: "btnDocentes", vistaReportes: "btnReportes" };
 function verVista(id) {
   for (const [v, b] of Object.entries(VISTAS)) { $(v).hidden = v !== id; if (b) $(b).setAttribute("aria-current", String(v === id)); }
 }
@@ -906,7 +929,8 @@ function mensajeCorreo(d) {
     "Tu código personal: " + d.codigo, "",
     "Cómo usarlo:",
     "1. Para revisar personajes, entrevistas y evaluaciones: entra al enlace, abre la pestaña «Docente» y escribe tu código.",
-    "2. Para conversar con la paciente: en la pantalla de inicio, pestaña «Estudiante», escribe el mismo código.", "",
+    "2. Para conversar con la paciente: en la pantalla de inicio, pestaña «Estudiante», escribe el mismo código.",
+    "3. Si algo falla o no se entiende: usa el botón «Reportar un problema», que está en todas las pantallas. Me llega directo, sin tu nombre.", "",
     "El código es personal; por favor no lo compartas. Si tienes problemas para entrar, respóndeme este correo.", "",
     "Saludos,", "Andrea · Centro de Simulación USS",
   ].join("\r\n");
@@ -933,6 +957,66 @@ $("btnCrearD").onclick = async () => {
   } catch (e) { $("estadoDoc").textContent = e.message; await cargarDocentes().catch(() => {}); }
   finally { $("btnCrearD").disabled = false; }
 };
+
+/* Reportes de problemas: cualquiera con sesión envía; administración los revisa, marca resueltos y borra */
+let reportes = [];
+const PANTALLA_TXT = { seleccion: "Selección de paciente", entrevista: "Entrevista", retroalimentacion: "Retroalimentación", panel: "Panel docente" };
+$("btnReportes").onclick = async () => {
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return;
+  cambios = false; verVista("vistaReportes"); $("estadoRep").textContent = "";
+  $("cajaListaRep").hidden = !esAdminSesion;
+  if (esAdminSesion) await cargarReportes();
+};
+$("formReporte").addEventListener("submit", async e => {
+  e.preventDefault(); e.stopPropagation();
+  const texto = $("repTexto").value.trim();
+  if (texto.length < 5) { $("estadoRep").textContent = "Cuéntanos qué pasó, aunque sea en una frase."; $("repTexto").focus(); return; }
+  $("btnEnviarRep").disabled = true; $("estadoRep").textContent = "Enviando…";
+  try {
+    await api("/api/reporte", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      tipo: $("repTipo").value, texto, pantalla: "panel", detalle: { navegador: navigator.userAgent, ventana: innerWidth + "x" + innerHeight } }) });
+    $("repTexto").value = ""; $("estadoRep").textContent = "Reporte enviado. ¡Gracias por avisar!";
+    if (esAdminSesion) await cargarReportes();
+  } catch (err) { $("estadoRep").textContent = err.message; }
+  finally { $("btnEnviarRep").disabled = false; }
+});
+async function cargarReportes() {
+  $("estadoListaRep").textContent = "Cargando…";
+  try {
+    reportes = (await (await api("/api/docente?reportes=1")).json()).reportes || [];
+    pintarReportes();
+  } catch (e) { $("estadoListaRep").textContent = e.message; }
+}
+function pintarReportes() {
+  const cont = $("listaRep"); cont.textContent = "";
+  const pendientes = reportes.filter(r => !r.resuelto).length, lista = reportes.filter(r => $("repVerResueltos").checked || !r.resuelto);
+  $("estadoListaRep").textContent = reportes.length ? `${pendientes} ${pendientes === 1 ? "pendiente" : "pendientes"} de ${reportes.length} ${reportes.length === 1 ? "reporte" : "reportes"}.` : "Todavía no hay reportes.";
+  for (const r of lista) {
+    const fila = el("div", undefined, "caja"); fila.style.cssText = "display:flex;flex-direction:column;gap:8px" + (r.resuelto ? ";opacity:.65" : "");
+    const meta = el("div", undefined, "ayuda"); meta.style.cssText = "display:flex;flex-wrap:wrap;gap:4px 16px";
+    const caso = casos.find(c => c.id === r.caso);
+    for (const t of [fecha(r.creado), r.tipo, PANTALLA_TXT[r.pantalla], r.caso && "Paciente: " + (caso ? caso.nombre : r.caso)].filter(Boolean)) meta.append(el("span", t));
+    const cuerpo = el("div", r.texto); cuerpo.style.whiteSpace = "pre-wrap"; cuerpo.style.overflowWrap = "anywhere";
+    fila.append(el("div", r.etiqueta, "cod"), meta, cuerpo);
+    const d = r.detalle || {};
+    const det = document.createElement("details"); det.className = "guia-foco"; det.append(el("summary", "Datos técnicos" + (d.conversacion && d.conversacion.length ? " y conversación" : "")));
+    det.append(el("p", [d.navegador, d.ventana && "ventana " + d.ventana, d.intervenciones ? d.intervenciones + " intervenciones" : ""].filter(Boolean).join(" · ") || "Sin datos.", "ayuda"));
+    for (const t of d.conversacion || []) { const p = el("p", undefined, "turno-t"); p.style.fontSize = ".9rem"; p.append(el("b", t.role === "user" ? "Estudiante: " : "Paciente: "), t.content); det.append(p); }
+    const acc = el("div"); acc.style.cssText = "display:flex;flex-wrap:wrap;gap:12px;align-items:center";
+    const lab = el("label", undefined, "check"); const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = r.resuelto; lab.append(chk, " Resuelto");
+    chk.onchange = () => accionReporte({ accion: "reporteEstado", id: r.id, resuelto: chk.checked });
+    const bB = el("button", "Borrar", "peligro"); bB.type = "button";
+    bB.onclick = () => { if (confirm(`¿Borrar el reporte de ${r.etiqueta}? No se puede deshacer.`)) accionReporte({ accion: "reporteBorrar", id: r.id }); };
+    acc.append(lab, bB); fila.append(det, acc); cont.append(fila);
+  }
+}
+async function accionReporte(cuerpo) {
+  try { await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) }); }
+  catch (e) { $("estadoListaRep").textContent = e.message; }
+  await cargarReportes().catch(() => {});
+}
+$("btnActualizarRep").onclick = cargarReportes;
+$("repVerResueltos").onchange = pintarReportes;
 
 /* Guardar */
 $("editor").addEventListener("submit", async e => {

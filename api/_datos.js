@@ -242,3 +242,19 @@ export async function registrarAccesoDocente(codigo) {
     await pedirSupabase("docentes_codigos?codigo=eq." + encodeURIComponent(codigo), { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ultimo_acceso: new Date().toISOString() }) });
   } catch (e) { console.error("Acceso docente", e.message); }
 }
+
+// Reportes de problemas: los envía cualquier persona con un código válido; los lee y administra solo administración.
+export async function guardarReporte(r) {
+  if (!supabaseConfigurado) throw new Error("Para guardar reportes falta configurar Supabase en Vercel.");
+  await pedirSupabase("reportes", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(r) });
+}
+export async function listarReportes() {
+  if (!supabaseConfigurado) return [];
+  return pedirSupabase("reportes?select=*&order=resuelto.asc,creado.desc&limit=500");
+}
+export async function cambiarEstadoReporte(id, resuelto) {
+  await pedirSupabase(`reportes?id=eq.${encodeURIComponent(Number(id) || 0)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ resuelto: Boolean(resuelto) }) });
+}
+export async function borrarReporte(id) {
+  await pedirSupabase(`reportes?id=eq.${encodeURIComponent(Number(id) || 0)}`, { method: "DELETE" });
+}

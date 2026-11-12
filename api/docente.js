@@ -4,7 +4,7 @@
 // - Códigos individuales de la tabla «docentes_codigos» (etiqueta D1…D6): pueden entrevistar y ver personajes, entrevistas y evaluaciones, pero no editar ni borrar.
 import { error } from "./_lib.js";
 import { PARTE_A, PARTE_B } from "./_rubrica.js";
-import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion, listarEntrevistas, verEntrevista, borrarEntrevista, leerAjuste, guardarAjuste, listarDocentes, buscarDocente, crearDocente, cambiarEstadoDocente, borrarDocente, registrarAccesoDocente } from "./_datos.js";
+import { listarCasos, guardarCaso, supabaseConfigurado, CAMPOS, listarActividades, guardarActividad, borrarActividad, normalizarCodigo, GUIAS, borrarCaso, listarPronunciacion, guardarPronunciacion, listarEntrevistas, verEntrevista, borrarEntrevista, leerAjuste, guardarAjuste, listarDocentes, buscarDocente, crearDocente, cambiarEstadoDocente, borrarDocente, registrarAccesoDocente, listarReportes, cambiarEstadoReporte, borrarReporte } from "./_datos.js";
 import { sintetizar } from "./hablar.js";
 
 // Devuelve { rol, etiqueta } o una respuesta de error.
@@ -44,6 +44,7 @@ export async function GET(request) {
     if (q.get("rubrica")) return Response.json({ parteA: PARTE_A, parteB: PARTE_B });
     if (q.get("pronunciacion")) return Response.json({ lista: await listarPronunciacion() });
     if (q.get("docentes")) { if (!admin) return error(403, "Los códigos de docente los administra solo administración."); return Response.json({ docentes: await listarDocentes(), editable }); }
+    if (q.get("reportes")) { if (!admin) return error(403, "Los reportes los revisa solo administración."); return Response.json({ reportes: await listarReportes(), editable }); }
     if (q.get("actividades")) { if (!admin) return error(403, "Las actividades las administra solo administración."); return Response.json({ actividades: await listarActividades(), editable }); }
     if (q.get("entrevistas")) return Response.json({ entrevistas: await listarEntrevistas({ completo: q.get("completo") === "1" }), editable });
     if (q.get("entrevista")) return Response.json({ entrevista: await verEntrevista(q.get("entrevista")) });
@@ -107,6 +108,12 @@ export async function POST(request) {
   }
   if (body.accion === "docenteBorrar") {
     try { await borrarDocente(body.codigo); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "reporteEstado") {
+    try { await cambiarEstadoReporte(body.id, body.resuelto !== false); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
+  }
+  if (body.accion === "reporteBorrar") {
+    try { await borrarReporte(body.id); return Response.json({ ok: true }); } catch (e) { return error(502, e.message); }
   }
   if (body.accion === "actividad") {
     const codigo = normalizarCodigo(body.codigo);

@@ -37,6 +37,7 @@ api/chat.js           respuestas de la paciente y retroalimentación (Claude)
 api/transcribir.js    voz a texto (Whisper)
 api/hablar.js         texto a voz chilena (Azure)
 api/estado.js         indica qué servicios están configurados
+api/reporte.js        recibe los reportes de problemas
 api/_caso.js          guion del caso y reglas del rol
 api/_lib.js           código de acceso y utilidades
 ```
@@ -65,6 +66,13 @@ En `/docente.html` se editan las capas, se activa o desactiva cada personaje y s
 - Cada fila tiene «Enviar con Gmail / Outlook»: se escribe el correo de la persona y se prepara el mensaje (enlace, código y cómo usarlo) en Gmail, en Outlook web, en tu programa de correo o se copia al portapapeles. La app no guarda ni envía el correo; tú lo revisas y lo envías. Si «Programa de correo» no hace nada, tu computador no tiene uno configurado: usa Gmail, Outlook o Copiar mensaje.
 - Un código desactivado o borrado deja de funcionar en menos de un minuto.
 - La tabla se crea con `sql/2026-11-12_docentes_codigos.sql`.
+
+## Reportar un problema
+
+- El botón «Reportar un problema» está en la selección de paciente, en la sala de entrevista, en la retroalimentación y en el panel docente. Lo puede usar cualquier persona con un código válido.
+- Cada reporte guarda la etiqueta del código (D1…D6, el nombre de la actividad o «Práctica libre»; nunca el código ni un nombre), el tipo de problema, la pantalla, la paciente, el navegador y, si la persona lo deja marcado, la conversación en curso.
+- En el panel, «Reportar un problema» muestra a administración los reportes recibidos: se marcan como resueltos o se borran. Los códigos D1 a D6 pueden enviar, pero no ver los de otras personas.
+- La tabla se crea con `sql/2026-11-12_reportes.sql`.
 
 ## Actividades y guía de la entrevista
 
