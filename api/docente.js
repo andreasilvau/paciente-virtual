@@ -64,6 +64,7 @@ function limpiar(datos) {
     else if (k === "activo") v = Boolean(v);
     else if (k === "carreras") v = (Array.isArray(v) ? v : String(v || "").split(",")).map(x => String(x).trim()).filter(Boolean).slice(0, 20);
     else if (k === "voz_id") v = String(v || "").trim() || null;
+    else if (k === "modelo_3d") { v = String(v || "").trim(); v = /^\/modelos\/[a-z0-9-]+\.glb$/.test(v) ? v : null; }
     else if (k === "rubrica_na") v = (Array.isArray(v) ? v : []).map(x => String(x).toUpperCase()).filter(x => /^B([1-9]|1[0-8])$/.test(x));
     else if (k === "estilo") {
       // Solo las claves conocidas, como texto corto.

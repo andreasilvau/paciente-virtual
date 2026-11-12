@@ -87,6 +87,10 @@ En `/docente.html` se editan las capas, se activa o desactiva cada personaje y s
 - **Consentimiento (panel → Consentimiento):** si se activa, se muestra antes de la primera entrevista. Quien no acepta puede practicar, pero no se guarda nada. Al cambiar el texto se vuelve a pedir.
 - Las tablas se crean con `sql/2026-11-11_entrevistas_ajustes.sql`. Los casos de esa fecha están en `sql/2026-11-11_casos.sql`; los casos anteriores quedaron respaldados en la tabla `casos_archivo`.
 
+## Avatar 3D
+
+En el panel, pestaña «3. Lingüística» → «Avatar 3D (opcional)», se elige si el personaje aparece con cuerpo. Los modelos son archivos `.glb` en la carpeta `modelos/`; por ahora hay uno (`valentina.glb`). Para sumar otro, hay que agregar el archivo a esa carpeta y su opción a la lista de `docente.html`. La elección se guarda en la columna `modelo_3d` de `casos` (`sql/2026-11-12_limpieza_y_modelo_3d.sql`).
+
 ## Casos pediátricos
 
 Se entrevista a la persona cuidadora (por ejemplo, el nombre del caso termina en «(entrevista a la madre)»). La niña o el niño interviene con frases cortas que el modelo escribe entre dobles llaves, `{{Florencia: …}}`: se muestran en la transcripción, pero no se leen en voz alta.

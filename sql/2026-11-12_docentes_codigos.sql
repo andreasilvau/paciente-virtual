@@ -1,5 +1,5 @@
 -- Códigos de ingreso individuales para los docentes (D1 a D6), sin nombres.
--- Tabla propia: la tabla «docentes» antigua (id, nombre, codigo_hash) no se toca.
+-- Tabla propia. La tabla «docentes» antigua se borró en 2026-11-12_limpieza_y_modelo_3d.sql.
 create table if not exists docentes_codigos (
   codigo text primary key,
   etiqueta text not null unique,

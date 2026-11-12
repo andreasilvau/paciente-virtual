@@ -409,6 +409,13 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
         </div>
           <p class="campo ancho ayuda">Para corregir cómo pronuncia la voz una palabra o sigla (por ejemplo, «PAP»), usa «Pronunciación» en la lista de la izquierda.</p>
         </fieldset>
+        <fieldset>
+          <legend>Avatar 3D (opcional)</legend>
+        <div class="campo ancho"><label for="f_modelo_3d">Cuerpo de la paciente</label>
+          <select id="f_modelo_3d"><option value="">Sin avatar: círculo con la inicial</option><option value="/modelos/valentina.glb">Mujer joven (modelo «valentina»)</option></select>
+          <span class="ayuda">Con avatar, la paciente aparece con cuerpo: mueve la boca al hablar, parpadea y cambia la expresión según lo que dice. Si el dispositivo no puede mostrarlo, se ve el círculo con la inicial. Descarga unos 3 MB la primera vez.</span>
+        </div>
+        </fieldset>
       </div>
 
       <div class="dim" id="dim-evaluacion" role="tabpanel" aria-labelledby="tab-evaluacion" hidden>
@@ -475,7 +482,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 <script>
 const $ = id => document.getElementById(id);
 const CAMPOS = ["nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "foco_cicaa", "orden", "activo", "desafio", "carreras",
-  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "cierre", "hitos", "voz_id", "rubrica"];
+  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "cierre", "hitos", "voz_id", "rubrica", "modelo_3d"];
 let codigo = "", casos = [], voces = [], actual = null, nuevo = false, cambios = false, editable = true, esAdminSesion = false;
 const audio = new Audio();
 const guardar = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };

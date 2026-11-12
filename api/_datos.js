@@ -11,7 +11,7 @@ export const supabaseConfigurado = Boolean(URL_SB && CLAVE_SB);
 // Columnas de la tabla que se pueden editar desde la página de docente.
 export const CAMPOS = ["orden", "activo", "nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "desafio",
   "foco_cicaa", "carreras", "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional",
-  "forma_de_hablar", "reglas_adicionales", "hitos", "cierre", "voz_id", "estilo", "rubrica", "rubrica_na"];
+  "forma_de_hablar", "reglas_adicionales", "hitos", "cierre", "voz_id", "estilo", "rubrica", "rubrica_na", "modelo_3d"];
 
 function encabezados(extra = {}) {
   const h = { apikey: CLAVE_SB, "Content-Type": "application/json", ...extra };
@@ -90,6 +90,7 @@ export async function guardarCaso(id, datos) {
 // Datos que puede ver el estudiante (nunca las capas del guion ni la voz).
 export function datosPublicos(c) {
   return {
+    modelo3d: /^\/modelos\/[a-z0-9-]+\.glb$/.test(c.modelo_3d || "") ? c.modelo_3d : "",
     id: c.id, sexo: c.sexo || "femenino", nombre: c.nombre, edad: c.edad, rut: c.rut ? `${c.rut} (ficticio)` : "",
     atencion: c.atencion, motivo: c.motivo, nivel: c.nivel_dificultad, desafio: c.desafio, foco: c.foco_cicaa,
   };
