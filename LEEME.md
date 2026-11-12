@@ -87,6 +87,13 @@ En `/docente.html` se editan las capas, se activa o desactiva cada personaje y s
 - **Consentimiento (panel → Consentimiento):** si se activa, se muestra antes de la primera entrevista. Quien no acepta puede practicar, pero no se guarda nada. Al cambiar el texto se vuelve a pedir.
 - Las tablas se crean con `sql/2026-11-11_entrevistas_ajustes.sql`. Los casos de esa fecha están en `sql/2026-11-11_casos.sql`; los casos anteriores quedaron respaldados en la tabla `casos_archivo`.
 
+## Versiones por nivel de un mismo caso
+
+- Cada caso clínico puede tener una versión básica, una intermedia y una avanzada. Cada versión es un personaje completo (guion, emociones, hitos, voz), y todas comparten el mismo «Caso clínico (grupo)».
+- En el panel, la lista agrupa las versiones de cada caso y muestra «+ Crear versión…» para los niveles que faltan: abre una copia de la versión existente, oculta para estudiantes, que se ajusta y se guarda.
+- El estudiante ve una tarjeta por caso; si hay más de una versión visible, elige el nivel en la misma tarjeta.
+- El servidor no permite dos versiones del mismo nivel en un caso. La columna se crea con `sql/2026-11-12_casos_grupo.sql`.
+
 ## Avatar 3D
 
 En el panel, pestaña «3. Lingüística» → «Avatar 3D (opcional)», se elige si el personaje aparece con cuerpo. Los modelos son archivos `.glb` en la carpeta `modelos/`; por ahora hay uno (`valentina.glb`). Para sumar otro, hay que agregar el archivo a esa carpeta y su opción a la lista de `docente.html`. La elección se guarda en la columna `modelo_3d` de `casos` (`sql/2026-11-12_limpieza_y_modelo_3d.sql`).

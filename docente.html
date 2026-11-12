@@ -47,6 +47,10 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.45; font-size: .95
 .item b { font-weight: 700; }
 .item small { color: var(--muted); font-size: .8rem; }
 .item[aria-current="true"] { border-color: var(--accent); background: var(--soft); }
+.grupo-caso { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--surface) 55%, transparent); }
+.grupo-caso > .label { padding: 0 4px; }
+.item.falta { border-style: dashed; background: transparent; color: var(--muted); font-size: .88rem; padding: 7px 12px; }
+.solo-lectura .item.falta { display: none; }
 .item.inactivo b { text-decoration: line-through; color: var(--muted); }
 .punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .con-voz { background: var(--ok); } .sin-voz { background: var(--line); }
@@ -285,6 +289,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
         <div class="campo"><label for="f_sexo">Sexo</label><select id="f_sexo"><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
         <div class="campo"><label for="f_edad">Edad</label><input type="text" id="f_edad" placeholder="ej. 32 años"></div>
         <div class="campo"><label for="f_nivel_dificultad">Nivel</label><select id="f_nivel_dificultad"><option>Básico</option><option>Intermedio</option><option>Avanzado</option></select></div>
+        <div class="campo"><label for="f_grupo">Caso clínico (grupo)</label><input type="text" id="f_grupo" placeholder="igual al identificador"><span class="ayuda">Los personajes con el mismo grupo son versiones del mismo caso: la estudiante elige la paciente y después el nivel.</span></div>
         <div class="campo"><label for="f_orden">Orden en la lista</label><input type="number" id="f_orden" step="10"></div>
         <div class="campo"><label class="check"><input type="checkbox" id="f_activo"> Visible para estudiantes</label></div>
         <div class="campo ancho"><label for="f_carreras">Carreras</label><input type="text" id="f_carreras" placeholder="Obstetricia, Enfermería"><span class="ayuda">Separadas por coma.</span></div>
@@ -482,7 +487,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 <script>
 const $ = id => document.getElementById(id);
 const CAMPOS = ["nombre", "sexo", "edad", "rut", "atencion", "motivo", "nivel_dificultad", "foco_cicaa", "orden", "activo", "desafio", "carreras",
-  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "cierre", "hitos", "voz_id", "rubrica", "modelo_3d"];
+  "identificacion", "identidad", "guion_clinico", "info_condicionada", "carga_emocional", "forma_de_hablar", "reglas_adicionales", "cierre", "hitos", "voz_id", "rubrica", "modelo_3d", "grupo"];
 let codigo = "", casos = [], voces = [], actual = null, nuevo = false, cambios = false, editable = true, esAdminSesion = false;
 const audio = new Audio();
 const guardar = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };
@@ -517,19 +522,45 @@ async function cargar() {
   } catch (e) { aviso(e.message); }
 }
 
+// La lista agrupa las versiones de cada caso clínico (básica, intermedia, avanzada) y ofrece crear las que faltan.
+const NIVELES = ["Básico", "Intermedio", "Avanzado"];
+const grupoDe = c => c.grupo || c.id;
+const FEMENINO = { "Básico": "básica", "Intermedio": "intermedia", "Avanzado": "avanzada" };
 function pintarLista() {
   const cont = $("lista"); cont.textContent = "";
-  for (const c of casos) {
-    const b = document.createElement("button"); b.type = "button"; b.className = "item" + (c.activo ? "" : " inactivo");
-    b.setAttribute("aria-current", String(actual && actual.id === c.id && !nuevo));
-    const t = document.createElement("b"); t.textContent = c.nombre;
-    const s = document.createElement("small");
-    const p = document.createElement("span"); p.className = "punto " + (c.voz_id ? "con-voz" : "sin-voz"); p.title = c.voz_id ? "Tiene voz propia" : "Usa la voz general";
-    s.append(p, `${c.nivel_dificultad} · ${c.edad}${c.activo ? "" : " · oculto"}`);
-    b.append(t, s);
-    b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Cambiar de personaje igual?")) return; abrir(c); };
-    cont.append(b);
+  const grupos = new Map();
+  for (const c of casos) { const g = grupoDe(c); if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push(c); }
+  for (const [g, versiones] of grupos) {
+    const caja = document.createElement("div"); caja.className = "grupo-caso";
+    const tit = document.createElement("span"); tit.className = "label"; tit.textContent = versiones[0].nombre; caja.append(tit);
+    const pos = c => { const i = NIVELES.indexOf(c.nivel_dificultad); return i < 0 ? 9 : i; };
+    for (const c of [...versiones].sort((a, b) => pos(a) - pos(b))) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "item" + (c.activo ? "" : " inactivo");
+      b.setAttribute("aria-current", String(actual && actual.id === c.id && !nuevo));
+      const t = document.createElement("b"); t.textContent = c.nivel_dificultad;
+      const s = document.createElement("small");
+      const p = document.createElement("span"); p.className = "punto " + (c.voz_id ? "con-voz" : "sin-voz"); p.title = c.voz_id ? "Tiene voz propia" : "Usa la voz general";
+      s.append(p, `${c.nombre} · ${c.edad}${c.activo ? "" : " · oculto"}`);
+      b.append(t, s);
+      b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Cambiar de personaje igual?")) return; abrir(c); };
+      caja.append(b);
+    }
+    if (editable) for (const n of NIVELES) {
+      if (versiones.some(c => c.nivel_dificultad === n)) continue;
+      const b = document.createElement("button"); b.type = "button"; b.className = "item falta"; b.textContent = "+ Crear versión " + FEMENINO[n];
+      b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Crear la versión igual?")) return; crearVersion(versiones[0], n); };
+      caja.append(b);
+    }
+    cont.append(caja);
   }
+}
+// Parte de una copia de la versión existente: se ajusta el guion a la nueva dificultad y recién al guardar se crea.
+function crearVersion(base, nivel) {
+  const g = grupoDe(base), sufijo = nivel.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+  let id = `${g}-${sufijo}`.slice(0, 40); for (let i = 2; casos.some(c => c.id === id); i++) id = `${g}-${sufijo}`.slice(0, 37) + "-" + i;
+  abrir({ ...base, nivel_dificultad: nivel, grupo: g, activo: false }, id); // mismo orden que la base: dentro del caso se ordena por nivel
+  cambios = true; sugerirFoco();
+  $("estadoGuardado").textContent = `Versión ${FEMENINO[nivel]} sin guardar: es una copia de «${base.nombre}». Ajusta el guion, las emociones y los hitos a esta dificultad, y guarda. Queda oculta hasta que marques «Visible para estudiantes».`;
 }
 
 // Muestra una sola vista a la vez (editor de personaje u otra sección) y marca su botón en la lista.
@@ -537,12 +568,13 @@ const VISTAS = { editor: null, vistaActividades: "btnActividades", vistaPronunci
 function verVista(id) {
   for (const [v, b] of Object.entries(VISTAS)) { $(v).hidden = v !== id; if (b) $(b).setAttribute("aria-current", String(v === id)); }
 }
-function abrir(c) {
+// c: personaje que se muestra. idCopia: si viene, c es solo la plantilla de un personaje nuevo con ese identificador.
+function abrir(c, idCopia) {
   verVista("editor");
-  nuevo = !c; actual = c || null; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
+  nuevo = !c || Boolean(idCopia); actual = nuevo ? null : c; cambios = false; $("estadoGuardado").textContent = ""; $("estadoGuardado").className = "";
   $("btnBorrar").hidden = nuevo; $("btnBorrar").disabled = !editable;
   if (nuevo) verDimension("clinica");
-  $("f_id").value = c ? c.id : ""; $("f_id").disabled = Boolean(c);
+  $("f_id").value = idCopia || (c ? c.id : ""); $("f_id").disabled = !nuevo;
   for (const k of CAMPOS) {
     const el = $("f_" + k); if (!el) continue;
     const v = c ? c[k] : (k === "activo" ? true : k === "orden" ? (casos.length + 1) * 10 : k === "nivel_dificultad" ? "Intermedio" : k === "sexo" ? "femenino" : "");
@@ -554,7 +586,7 @@ function abrir(c) {
   pintarEstilo(c && c.estilo);
   pintarIdentificacion(); pintarCierre(); pintarNoAplican(c && c.rubrica_na);
   sincronizarListaVoz();
-  for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && Boolean(c));
+  for (const el of $("editor").querySelectorAll("input, select, textarea")) el.disabled = !editable || (el.id === "f_id" && !nuevo);
   $("f_frase").disabled = false; $("f_voz_lista").disabled = !editable && false;
   $("btnGuardar").disabled = !editable;
   pintarLista();

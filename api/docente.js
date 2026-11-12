@@ -64,6 +64,7 @@ function limpiar(datos) {
     else if (k === "activo") v = Boolean(v);
     else if (k === "carreras") v = (Array.isArray(v) ? v : String(v || "").split(",")).map(x => String(x).trim()).filter(Boolean).slice(0, 20);
     else if (k === "voz_id") v = String(v || "").trim() || null;
+    else if (k === "grupo") { v = String(v || "").trim().toLowerCase(); v = /^[a-z0-9-]{2,40}$/.test(v) ? v : null; }
     else if (k === "modelo_3d") { v = String(v || "").trim(); v = /^\/modelos\/[a-z0-9-]+\.glb$/.test(v) ? v : null; }
     else if (k === "rubrica_na") v = (Array.isArray(v) ? v : []).map(x => String(x).toUpperCase()).filter(x => /^B([1-9]|1[0-8])$/.test(x));
     else if (k === "estilo") {
@@ -150,10 +151,13 @@ export async function POST(request) {
     if (body.nuevo && !String(fila[k] || "").trim()) return error(400, `Falta completar el campo «${k.replace("_", " ")}».`);
   }
   try {
-    if (body.nuevo) {
-      const existentes = await listarCasos({ incluirInactivos: true });
-      if (existentes.some(c => c.id === id)) return error(409, "Ya existe un personaje con ese identificador.");
-    }
+    const existentes = await listarCasos({ incluirInactivos: true });
+    if (body.nuevo && existentes.some(c => c.id === id)) return error(409, "Ya existe un personaje con ese identificador.");
+    // Un caso clínico tiene, como máximo, una versión por nivel de dificultad.
+    const previo = existentes.find(c => c.id === id) || {};
+    const grupo = ("grupo" in fila ? fila.grupo : previo.grupo) || id, nivel = fila.nivel_dificultad || previo.nivel_dificultad;
+    const choque = existentes.find(c => c.id !== id && (c.grupo || c.id) === grupo && c.nivel_dificultad === nivel);
+    if (choque) return error(409, `Este caso ya tiene una versión de nivel ${String(nivel).toLowerCase()} («${choque.nombre}», ${choque.id}). Cambia el nivel o edita esa versión.`);
     return Response.json({ caso: await guardarCaso(id, fila) });
   } catch (e) { return error(502, e.message); }
 }

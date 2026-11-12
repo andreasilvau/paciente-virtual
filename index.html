@@ -163,6 +163,11 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 .tono-2 { --tono: var(--t2); --tono-suave: var(--t2s); } .tono-3 { --tono: var(--t3); --tono-suave: var(--t3s); }
 .tono-4 { --tono: var(--t4); --tono-suave: var(--t4s); } .tono-5 { --tono: var(--t5); --tono-suave: var(--t5s); }
 .tono-6 { --tono: var(--t6); --tono-suave: var(--t6s); }
+/* Niveles de un mismo caso: botones para elegir la versión básica, intermedia o avanzada */
+.elige-nivel { display: flex; flex-direction: column; gap: 4px; }
+.niveles { display: flex; gap: 6px; flex-wrap: wrap; }
+.niveles button.nivel { min-height: 36px; padding: 4px 12px; cursor: pointer; opacity: .6; box-shadow: none; }
+.niveles button.nivel[aria-pressed="true"] { opacity: 1; box-shadow: inset 0 0 0 2px currentColor; }
 .inicial { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--tono-suave); color: var(--tono); font: 700 1.2rem/1 var(--display); }
 .tarjeta { border-top: 5px solid var(--tono); }
 .tarjeta .cabeza { align-items: center; justify-content: flex-start; gap: 12px; }
@@ -403,7 +408,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
   <section class="seleccion" id="seleccion" hidden>
     <div class="saludo">
       <img src="/mascota.webp" width="440" height="536" alt="">
-      <p class="globo" id="globoSeleccion">¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.</p>
+      <p class="globo" id="globoSeleccion">¿A quién vas a atender hoy? Elige la paciente y, si tiene varios niveles, la dificultad.</p>
       <button type="button" id="btnSalirSeleccion" class="salir-sel" title="Salir y borrar el código guardado">Salir</button>
     </div>
     <p class="participante" id="participante"></p>
@@ -597,27 +602,51 @@ function mostrar(pantalla) {
   window.scrollTo(0, 0);
 }
 function claseNivel(n) { return "nivel nivel-" + String(n || "").toLowerCase().normalize("NFD").replace(/[^a-z]/g, ""); }
+// Cada tarjeta es un caso clínico; si tiene varias versiones (básica, intermedia, avanzada), la estudiante elige el nivel en la misma tarjeta.
+const ORDEN_NIVEL = ["Básico", "Intermedio", "Avanzado"];
+function agruparCasos() {
+  const grupos = new Map();
+  for (const c of casos) { const g = c.grupo || c.id; if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push(c); }
+  const pos = c => { const i = ORDEN_NIVEL.indexOf(c.nivel); return i < 0 ? 9 : i; };
+  return [...grupos.values()].map(v => v.sort((a, b) => pos(a) - pos(b)));
+}
 function pintarTarjetas() {
   const cont = $("tarjetas"); cont.textContent = "";
   if (!casos.length) { const v = document.createElement("p"); v.className = "aviso"; v.textContent = errorCasos || "Todavía no hay pacientes disponibles. Avísale a tu docente."; cont.append(v); return; }
-  casos.forEach((c, i) => { c.tono = "tono-" + (i % 7); });
-  for (const c of casos) {
-    const t = document.createElement("article"); t.className = "tarjeta " + c.tono;
-    const cab = document.createElement("div"); cab.className = "cabeza";
-    const ini = document.createElement("span"); ini.className = "inicial"; ini.setAttribute("aria-hidden", "true"); ini.textContent = c.nombre.trim().charAt(0);
-    const h = document.createElement("h2"); h.textContent = c.nombre;
-    const e = document.createElement("span"); e.className = "edad"; e.textContent = c.edad;
-    cab.append(ini, h, e);
-    const m = document.createElement("p"); m.className = "motivo"; m.textContent = c.motivo;
-    const d = document.createElement("p"); d.className = "desafio"; d.textContent = c.desafio;
-    const f = document.createElement("span"); f.className = "foco"; f.textContent = "Foco CICAA: " + c.foco;
-    const pie = document.createElement("div"); pie.className = "pie";
-    const nv = document.createElement("span"); nv.className = claseNivel(c.nivel); nv.textContent = c.nivel;
-    const b = document.createElement("button"); b.type = "button"; b.className = "primario"; b.textContent = "Atender a " + c.nombre.split(" ")[0];
-    b.onclick = () => elegirCaso(c);
-    pie.append(nv, b);
+  agruparCasos().forEach((versiones, i) => {
+    const tono = "tono-" + (i % 7); versiones.forEach(c => { c.tono = tono; });
+    const crear = (tag, clase) => { const x = document.createElement(tag); if (clase) x.className = clase; return x; };
+    const t = crear("article", "tarjeta " + tono);
+    const cab = crear("div", "cabeza"), ini = crear("span", "inicial"), h = crear("h2"), e = crear("span", "edad");
+    ini.setAttribute("aria-hidden", "true"); cab.append(ini, h, e);
+    const m = crear("p", "motivo"), d = crear("p", "desafio"), f = crear("span", "foco"), pie = crear("div", "pie");
+    const b = crear("button", "primario"); b.type = "button";
+    let elegido = versiones[0];
+    const pintar = () => {
+      const c = elegido;
+      ini.textContent = c.nombre.trim().charAt(0); h.textContent = c.nombre; e.textContent = c.edad;
+      m.textContent = c.motivo; d.textContent = c.desafio; f.textContent = "Foco CICAA: " + c.foco;
+      b.textContent = "Atender a " + c.nombre.split(" ")[0];
+      for (const x of pie.querySelectorAll("[data-caso]")) x.setAttribute("aria-pressed", String(x.dataset.caso === c.id));
+    };
+    b.onclick = () => elegirCaso(elegido);
+    if (versiones.length > 1) {
+      const niveles = crear("div", "niveles"); niveles.setAttribute("role", "group"); niveles.setAttribute("aria-label", "Nivel de dificultad de " + versiones[0].nombre);
+      for (const c of versiones) {
+        const n = crear("button", claseNivel(c.nivel)); n.type = "button"; n.textContent = c.nivel; n.dataset.caso = c.id;
+        n.onclick = () => { elegido = c; pintar(); };
+        niveles.append(n);
+      }
+      const tit = crear("span", "label"); tit.textContent = "Elige el nivel";
+      const caja = crear("div", "elige-nivel"); caja.append(tit, niveles);
+      pie.append(caja, b);
+    } else {
+      const nv = crear("span", claseNivel(versiones[0].nivel)); nv.textContent = versiones[0].nivel;
+      pie.append(nv, b);
+    }
+    pintar();
     t.append(cab, m, d, f, pie); cont.append(t);
-  }
+  });
 }
 function elegirCaso(c) {
   casoActual = c; guardar("caso", c.id);
@@ -670,7 +699,7 @@ $("formAcceso").addEventListener("submit", async e => {
     if (consentimientoActual && !decisionConsentimiento()) pedirConsentimiento();
     mostrarAviso("");
     await cargarEstado();
-    $("globoSeleccion").textContent = (d.actividad ? `Actividad: ${d.actividad}. ` : "") + "¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.";
+    $("globoSeleccion").textContent = (d.actividad ? `Actividad: ${d.actividad}. ` : "") + "¿A quién vas a atender hoy? Elige la paciente y, si tiene varios niveles, la dificultad.";
     mostrar("seleccion");
   } catch (err) { $("errorAcceso").textContent = err.message; $("errorAcceso").hidden = false; }
   finally { $("btnEntrar").disabled = false; }
