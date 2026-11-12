@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Personajes · Paciente Virtual</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
 <style>
 :root {
@@ -843,7 +846,10 @@ $("formActividad").addEventListener("submit", async e => {
 
 /* Docentes: códigos de ingreso individuales (solo administración) */
 let docentes = [];
-$("btnDocentes").onclick = async () => { verVista("vistaDocentes"); await cargarDocentes(); };
+$("btnDocentes").onclick = async () => {
+  if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return;
+  cambios = false; verVista("vistaDocentes"); await cargarDocentes();
+};
 $("btnActualizarDoc").onclick = () => cargarDocentes();
 async function cargarDocentes() {
   $("estadoDoc").textContent = "Cargando…";

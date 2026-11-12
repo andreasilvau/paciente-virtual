@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Paciente Virtual</title>
+<meta name="robots" content="noindex, nofollow">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
 <style>
 :root {
@@ -54,6 +56,7 @@ header { display: flex; flex-direction: column; gap: 6px; }
   @keyframes tecleo { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-4px); opacity: 1; } }
 }
 .aviso { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 10px 14px; }
+.aviso-general { max-width: 860px; width: 100%; margin-inline: auto; }
 
 .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 button, input[type=password], input[type=text] { font: 700 .95rem var(--body); border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; }
@@ -360,6 +363,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
 </head>
 <body>
 <div class="wrap">
+  <div id="avisoGeneral" class="aviso aviso-general" role="status" hidden></div>
   <section class="inicio" id="inicio" hidden>
     <img class="mascota" src="/mascota.webp" width="440" height="536" alt="Robot con delantal clínico saludando con la mano">
     <div class="bienvenida">
@@ -382,7 +386,7 @@ button[aria-pressed="true"] { background: var(--soft); border-color: var(--accen
         <label class="label" for="codigoDocenteInicio">Código de docente</label>
         <input type="password" id="codigoDocenteInicio" autocomplete="off">
         <button class="primario" type="submit">Entrar al panel docente</button>
-        <p class="nota">Ahí editas los personajes, sus hitos y su voz.</p>
+        <p class="nota">En el panel revisas personajes, entrevistas y evaluaciones. Para conversar con la paciente, usa este mismo código en la pestaña Estudiante.</p>
       </form>
     </div>
   </section>
@@ -531,7 +535,12 @@ const DESPEDIDA = /\b(chao|chau|adi[oó]s|hasta luego|hasta pronto|nos vemos|que
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const leer = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-function mostrarAviso(t) { aviso.textContent = t || ""; aviso.hidden = !t; }
+// El aviso de la sala solo se ve durante la entrevista; en el inicio y en la selección se usa el aviso general.
+function mostrarAviso(t) {
+  const enSala = !$("app").hidden, general = $("avisoGeneral");
+  aviso.textContent = enSala ? (t || "") : ""; aviso.hidden = !enSala || !t;
+  general.textContent = enSala ? "" : (t || ""); general.hidden = enSala || !t;
+}
 
 async function api(ruta, opciones = {}) {
   const r = await fetch(ruta, { ...opciones, headers: { ...(opciones.headers || {}), "x-codigo": codigo } });
@@ -547,7 +556,10 @@ function salir() {
 }
 // Muestra una sola pantalla: inicio, selección de paciente o entrevista.
 function mostrar(pantalla) {
+  // Un aviso pendiente (por ejemplo, un error) se conserva al cambiar de pantalla.
+  const pendiente = aviso.textContent || $("avisoGeneral").textContent;
   for (const id of ["inicio", "seleccion", "app"]) $(id).hidden = id !== pantalla;
+  mostrarAviso(pendiente);
   window.scrollTo(0, 0);
 }
 function claseNivel(n) { return "nivel nivel-" + String(n || "").toLowerCase().normalize("NFD").replace(/[^a-z]/g, ""); }
@@ -596,7 +608,7 @@ function elegirPestana(docente) {
   $("formAcceso").hidden = docente; $("formDocente").hidden = !docente;
   const saludo = saludoHora();
   document.querySelector("#inicio .globo").textContent = docente
-    ? saludo.replace("!", ", profe!") + " Ingresa tu código docente para editar los personajes."
+    ? saludo.replace("!", ", profe!") + " Ingresa tu código docente para entrar al panel."
     : saludo + " Antes de entrar al box, ingresa el código que te entregó tu docente.";
   (docente ? $("codigoDocenteInicio") : $("codigo")).focus();
 }
@@ -622,6 +634,8 @@ $("formAcceso").addEventListener("submit", async e => {
     consentimientoActual = d.consentimiento || null;
     pintarParticipante();
     if (consentimientoActual && !decisionConsentimiento()) pedirConsentimiento();
+    mostrarAviso("");
+    await cargarEstado();
     $("globoSeleccion").textContent = (d.actividad ? `Actividad: ${d.actividad}. ` : "") + "¿A quién vas a atender hoy? Cada paciente entrena un desafío distinto de la anamnesis.";
     mostrar("seleccion");
   } catch (err) { $("errorAcceso").textContent = err.message; $("errorAcceso").hidden = false; }
@@ -1383,6 +1397,35 @@ $("chkEnvioAuto").onchange = () => {
   if (!grabador) pintarMic(); else pintarMic("escuchando");
 };
 
+/* Estado del servidor: servicios configurados y pacientes disponibles */
+async function cargarEstado() {
+  try {
+    const r = await fetch("/api/estado");
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    servicios = d.servicios || {};
+    casos = d.casos || []; errorCasos = d.errorCasos || "";
+    pintarTarjetas();
+    const faltan = [];
+    if (!servicios.codigo) faltan.push("código de acceso");
+    if (!servicios.claude) faltan.push("Claude");
+    $("btnMic").hidden = !servicios.whisper; $("btnEscribir").hidden = !servicios.whisper;
+    if (!servicios.whisper) { faltan.push("Whisper"); $("form").hidden = false; }
+    $("btnVoz").hidden = !servicios.voz;
+    if (!servicios.voz) faltan.push("voz (ElevenLabs o Azure)");
+    if (faltan.length) mostrarAviso("Falta configurar en Vercel: " + faltan.join(", ") + ".");
+  } catch (e) {
+    errorCasos = "No se pudo cargar la lista de pacientes. Revisa tu conexión y vuelve a entrar.";
+    if (!casos.length) pintarTarjetas();
+    mostrarAviso("No se pudo conectar con el servidor. Revisa tu conexión a internet.");
+  }
+}
+
+// Evita perder una entrevista en curso por cerrar o recargar la pestaña sin querer.
+window.addEventListener("beforeunload", e => {
+  if (turnos.length && $("secFeedback").hidden && !$("app").hidden) { e.preventDefault(); e.returnValue = ""; }
+});
+
 /* Inicio */
 (async () => {
   vozActiva = leer("voz") !== "0"; pintarVoz();
@@ -1394,18 +1437,7 @@ $("chkEnvioAuto").onchange = () => {
   codigo = "";
   mostrar("inicio");
   document.querySelector("#inicio .globo").textContent = saludoHora() + " Antes de entrar al box, ingresa el código que te entregó tu docente.";
-  try {
-    const d = await (await fetch("/api/estado")).json();
-    servicios = d.servicios || {};
-    casos = d.casos || []; errorCasos = d.errorCasos || "";
-    pintarTarjetas();
-    const faltan = [];
-    if (!servicios.codigo) faltan.push("código de acceso");
-    if (!servicios.claude) faltan.push("Claude");
-    if (!servicios.whisper) { faltan.push("Whisper"); $("btnMic").hidden = true; $("btnEscribir").hidden = true; $("form").hidden = false; }
-    if (!servicios.voz) { faltan.push("voz (ElevenLabs o Azure)"); $("btnVoz").hidden = true; }
-    if (faltan.length) mostrarAviso("Falta configurar en Vercel: " + faltan.join(", ") + ".");
-  } catch (e) { mostrarAviso("No se pudo conectar con el servidor."); }
+  await cargarEstado();
 })();
 </script>
 </body>

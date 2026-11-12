@@ -4,6 +4,9 @@
     "api/hablar.js": { "maxDuration": 60 },
     "api/transcribir.js": { "maxDuration": 60 }
   },
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ],
   "crons": [
     { "path": "/api/estado", "schedule": "17 13 * * *" }
   ]

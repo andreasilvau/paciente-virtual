@@ -12,11 +12,16 @@ EXPRESIÓN DE LA CARA
 import { reglasRubrica, calcularRubrica } from "./_rubrica.js";
 
 const MODELO_PACIENTE = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
+// Tope de largo de cada respuesta de la paciente. Con 250 algunas quedaban cortadas a media frase.
+const MAX_TOKENS_PACIENTE = 400;
 const MODELO_FEEDBACK = process.env.CLAUDE_MODEL_FEEDBACK || "claude-sonnet-5-5";
 
+// Se conserva la entrevista completa (hasta 300 turnos): si se recortara, la paciente olvidaría el comienzo
+// y la evaluación no vería el saludo, la presentación ni la confidencialidad.
+const MAX_TURNOS = 300;
 function limpiarTurnos(turnos) {
   const limpios = [];
-  for (const t of Array.isArray(turnos) ? turnos.slice(-40) : []) {
+  for (const t of Array.isArray(turnos) ? turnos.slice(-MAX_TURNOS) : []) {
     if (!t || (t.role !== "user" && t.role !== "assistant")) continue;
     const content = String(t.content || "").trim().slice(0, 2000);
     if (!content) continue;
@@ -101,15 +106,6 @@ export async function POST(request) {
   try {
     const caso = await buscarCaso(String(body.caso || ""));
     if (!caso) return error(500, "No hay personajes activos.");
-    if (body.modo === "rubrica") {
-      // Aplica la rúbrica (Parte A CICAA y Parte B contenido clínico) y calcula los porcentajes de logro.
-      if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir la evaluación.");
-      const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
-      const texto = await preguntarAClaude(MODELO_FEEDBACK, reglasRubrica(caso),
-        [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 6000);
-      try { return Response.json({ rubrica: calcularRubrica(texto, caso.rubrica_na) }); }
-      catch (e) { console.error("Rúbrica", e.message, texto.slice(0, 300)); return error(502, "No se pudo calcular la rúbrica. Vuelve a intentarlo."); }
-    }
     if (body.modo === "evaluacion") {
       // Evaluación completa (rúbrica + retroalimentación detallada) para el docente; el estudiante recibe solo la versión breve.
       if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
@@ -161,17 +157,10 @@ export async function POST(request) {
         hitos: resumenHitos, guardado, motivoNoGuardado,
       });
     }
-    if (body.modo === "feedback") {
-      if (turnos.filter(t => t.role === "user").length < 3) return error(400, "Haz al menos tres intervenciones antes de pedir retroalimentación.");
-      const transcripcion = turnos.map(t => (t.role === "user" ? "Estudiante: " : "Paciente: ") + t.content).join("\n");
-      const texto = await preguntarAClaude(MODELO_FEEDBACK, reglasFeedback(caso),
-        [{ role: "user", content: "Transcripción de la entrevista:\n\n" + transcripcion }], 4000);
-      return Response.json({ texto });
-    }
     if (!turnos.length || turnos[turnos.length - 1].role !== "user") return error(400, "No llegó tu intervención.");
     const reglas = reglasPaciente(caso, body.semilla) + (body.emociones ? REGLA_EMOCION : "");
-    if (body.enVivo) return await responderEnVivo(MODELO_PACIENTE, reglas, turnos, 250);
-    const texto = await preguntarAClaude(MODELO_PACIENTE, reglas, turnos, 250);
+    if (body.enVivo) return await responderEnVivo(MODELO_PACIENTE, reglas, turnos, MAX_TOKENS_PACIENTE);
+    const texto = await preguntarAClaude(MODELO_PACIENTE, reglas, turnos, MAX_TOKENS_PACIENTE);
     if (!texto) return error(502, "La paciente no alcanzó a responder. Vuelve a intentarlo.");
     return Response.json({ texto });
   } catch (e) {
