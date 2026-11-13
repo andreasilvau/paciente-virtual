@@ -96,7 +96,7 @@ En `/docente.html` se editan las capas, se activa o desactiva cada personaje y s
 
 ## Avatar 3D
 
-En el panel, pestaña «3. Lingüística» → «Avatar 3D (opcional)», se elige si el personaje aparece con cuerpo. Los modelos son archivos `.glb` en la carpeta `modelos/`; por ahora hay uno (`valentina.glb`). Para sumar otro, hay que agregar el archivo a esa carpeta y su opción a la lista de `docente.html`. La elección se guarda en la columna `modelo_3d` de `casos` (`sql/2026-11-12_limpieza_y_modelo_3d.sql`).
+En el panel, pestaña «3. Estilo conversacional» → «Avatar 3D (opcional)», se elige si el personaje aparece con cuerpo. Los modelos son archivos `.glb` en la carpeta `modelos/`; por ahora hay uno (`valentina.glb`). Para sumar otro, hay que agregar el archivo a esa carpeta y su opción a la lista de `docente.html`. La elección se guarda en la columna `modelo_3d` de `casos` (`sql/2026-11-12_limpieza_y_modelo_3d.sql`).
 
 ## Casos pediátricos
 

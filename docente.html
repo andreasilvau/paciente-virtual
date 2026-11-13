@@ -51,7 +51,8 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.45; font-size: .95
 .grupo-caso > .label { padding: 0 4px; }
 .item.falta { border-style: dashed; background: transparent; color: var(--muted); font-size: .88rem; padding: 7px 12px; }
 .solo-lectura .item.falta { display: none; }
-.item.inactivo b { text-decoration: line-through; color: var(--muted); }
+.item.inactivo b { color: var(--muted); }
+.oculto { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-size: .72rem; font-weight: 700; }
 .punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .con-voz { background: var(--ok); } .sin-voz { background: var(--line); }
 
@@ -143,7 +144,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
   <header style="display:flex;flex-direction:column;gap:6px">
     <span class="label"><a href="/">← Volver al inicio</a> · Paciente Virtual · Docentes</span>
     <h1>Personajes</h1>
-    <p class="lead">Cada personaje se construye en cuatro dimensiones: clínica, psicológica, lingüística y evaluación. Aquí también eliges su voz y decides cuáles ven los estudiantes. Los cambios llegan a la aplicación en unos minutos.</p>
+    <p class="lead">Cada personaje se construye en cuatro dimensiones: clínica, psicológica, estilo conversacional y evaluación. Aquí también eliges su voz y decides cuáles ven los estudiantes. Los cambios llegan a la aplicación en unos minutos.</p>
   </header>
 
   <form class="caja acceso" id="formAcceso">
@@ -298,7 +299,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       <div class="dim-tabs" role="tablist" aria-label="Dimensiones del personaje">
         <button type="button" role="tab" id="tab-clinica" aria-controls="dim-clinica" aria-selected="true"><b>1. Clínica</b><small>Datos, antecedentes y motivo de consulta</small></button>
         <button type="button" role="tab" id="tab-psicologica" aria-controls="dim-psicologica" aria-selected="false"><b>2. Psicológica</b><small>Emociones, miedos y actitud</small></button>
-        <button type="button" role="tab" id="tab-linguistica" aria-controls="dim-linguistica" aria-selected="false"><b>3. Lingüística</b><small>Cómo habla y qué palabras usa</small></button>
+        <button type="button" role="tab" id="tab-linguistica" aria-controls="dim-linguistica" aria-selected="false"><b>3. Estilo conversacional</b><small>Cómo habla y qué palabras usa</small></button>
         <button type="button" role="tab" id="tab-evaluacion" aria-controls="dim-evaluacion" aria-selected="false"><b>4. Evaluación</b><small>Qué debe lograr la estudiante</small></button>
       </div>
 
@@ -540,7 +541,8 @@ function pintarLista() {
       const t = document.createElement("b"); t.textContent = c.nivel_dificultad;
       const s = document.createElement("small");
       const p = document.createElement("span"); p.className = "punto " + (c.voz_id ? "con-voz" : "sin-voz"); p.title = c.voz_id ? "Tiene voz propia" : "Usa la voz general";
-      s.append(p, `${c.nombre} · ${c.edad}${c.activo ? "" : " · oculto"}`);
+      s.append(p, `${c.nombre} · ${c.edad}`);
+      if (!c.activo) { const o = document.createElement("span"); o.className = "oculto"; o.textContent = "Oculto para estudiantes"; o.title = "Solo se ve en este panel. Para mostrarlo, marca «Visible para estudiantes» y guarda."; s.append(o); }
       b.append(t, s);
       b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Cambiar de personaje igual?")) return; abrir(c); };
       caja.append(b);
