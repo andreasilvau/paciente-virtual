@@ -90,7 +90,8 @@ En `/docente.html` se editan las capas, se activa o desactiva cada personaje y s
 ## Versiones por nivel de un mismo caso
 
 - Cada caso clínico puede tener una versión básica, una intermedia y una avanzada. Cada versión es un personaje completo (guion, emociones, hitos, voz), y todas comparten el mismo «Caso clínico (grupo)».
-- En el panel, la lista agrupa las versiones de cada caso y muestra «+ Crear versión…» para los niveles que faltan: abre una copia de la versión existente, oculta para estudiantes, que se ajusta y se guarda.
+- El panel parte en un tablero con una tarjeta por caso y un casillero por nivel (visible, oculto o «+ Crear versión…»). Crear una versión abre una copia de la existente, oculta para estudiantes, que se ajusta y se guarda. El editor ocupa toda la pantalla y arriba tiene «← Casos» y un botón por nivel para pasar de una versión a otra.
+- Las demás secciones (entrevistas, actividades, pronunciación, consentimiento, docentes, reportes) están en la barra superior.
 - El estudiante ve una tarjeta por caso; si hay más de una versión visible, elige el nivel en la misma tarjeta.
 - El servidor no permite dos versiones del mismo nivel en un caso. La columna se crea con `sql/2026-11-12_casos_grupo.sql`.
 

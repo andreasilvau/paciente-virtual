@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Personajes · Paciente Virtual</title>
+<title>Panel docente · Paciente Virtual</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,16 +41,38 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.45; font-size: .95
 .caja { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
 .acceso { max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
 
-.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start; }
-.lista { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.layout { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+/* Barra superior: las secciones del panel. Los personajes viven en el tablero. */
+.secciones { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+.secciones .item { border-color: transparent; background: transparent; padding: 8px 12px; min-height: 40px; color: var(--muted); }
+.secciones .item[aria-current="true"] { background: var(--soft); color: var(--accent); border-color: transparent; }
+.secciones .esp { flex: 1; }
+/* Tablero: una tarjeta por caso clínico con sus tres niveles */
+.tablero-cab { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; justify-content: space-between; }
+.tablero-cab > div:first-child { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tablero-acc { display: flex; flex-wrap: wrap; gap: 8px; }
+.tablero { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px; align-items: start; }
+.caso-tarjeta { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.caso-tarjeta h3 { font: 700 1.1rem/1.2 var(--display); margin: 0; }
+.caso-tarjeta .sub { color: var(--muted); font-size: .88rem; margin-bottom: 4px; overflow-wrap: anywhere; }
+.slot { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; padding: 10px 12px; min-height: 44px; }
+.slot:hover:not(:disabled) { border-color: var(--accent); }
+.slot.falta { border-style: dashed; background: transparent; color: var(--muted); font-weight: 400; }
+.solo-lectura .slot.falta, .solo-lectura .niveles-ed .falta { display: none; }
+.estado { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.estado.visible { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.estado.oculto { background: var(--warn-bg); color: var(--warn); }
+/* Cabecera del editor: volver al tablero y cambiar de versión */
+.editor-cab { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.editor-cab h2 { font-size: 1.3rem; flex: 1 1 160px; min-width: 0; }
+.niveles-ed { display: flex; flex-wrap: wrap; gap: 6px; }
+.niveles-ed button { min-height: 40px; }
+.niveles-ed button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.niveles-ed .falta { border-style: dashed; background: transparent; color: var(--muted); font-weight: 400; }
 .item { text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; font-weight: 400; }
 .item b { font-weight: 700; }
 .item small { color: var(--muted); font-size: .8rem; }
 .item[aria-current="true"] { border-color: var(--accent); background: var(--soft); }
-.grupo-caso { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--surface) 55%, transparent); }
-.grupo-caso > .label { padding: 0 4px; }
-.item.falta { border-style: dashed; background: transparent; color: var(--muted); font-size: .88rem; padding: 7px 12px; }
-.solo-lectura .item.falta { display: none; }
 .item.inactivo b { color: var(--muted); }
 .oculto { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-size: .72rem; font-weight: 700; }
 .punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
@@ -116,7 +138,6 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .actividad { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(210px, 1.4fr) auto auto auto; gap: 10px 14px; align-items: center; }
 .actividad .cod { font: 700 1.05rem/1.2 var(--display); }
 @media (max-width: 760px) { .actividad { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .lista { position: static; } }
 .filtros { display: flex; flex-wrap: wrap; gap: 10px; }
 .filtros label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; font-weight: 600; }
 .tabla-ent { overflow-x: auto; }
@@ -132,8 +153,6 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 .detalle-ent .pt { font-weight: 700; text-align: center; border-radius: 6px; padding: 2px 0; background: var(--bg); }
 .detalle-ent .turno-t { padding: 4px 0; font-size: .92rem; }
 .detalle-ent .turno-t b { color: var(--muted); }
-.transferir { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.transferir button { font-size: .85rem; padding-inline: 6px; }
 /* Con un código individual (D1…D6) el panel es de lectura y prueba; editar y borrar queda para administración. */
 .solo-lectura #btnNuevo, .solo-lectura #btnImportar, .solo-lectura #btnActividades, .solo-lectura #btnPronunciacion,
 .solo-lectura #btnConsentimiento, .solo-lectura #btnGuardar, .solo-lectura #btnBorrar, .solo-lectura #detalleEnt .peligro { display: none; }
@@ -143,7 +162,7 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:6px">
     <span class="label"><a href="/">← Volver al inicio</a> · Paciente Virtual · Docentes</span>
-    <h1>Personajes</h1>
+    <h1>Panel docente</h1>
     <p class="lead">Cada personaje se construye en cuatro dimensiones: clínica, psicológica, estilo conversacional y evaluación. Aquí también eliges su voz y decides cuáles ven los estudiantes. Los cambios llegan a la aplicación en unos minutos.</p>
   </header>
 
@@ -156,22 +175,33 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
   <div id="aviso" class="aviso" role="status" hidden></div>
 
   <div class="layout" id="panel" hidden>
-    <nav class="lista" aria-label="Personajes">
-      <div id="lista" style="display:flex;flex-direction:column;gap:6px"></div>
-      <button type="button" id="btnNuevo">+ Nuevo personaje</button>
-      <div class="transferir">
-        <button type="button" id="btnExportar" title="Descarga todos los personajes en un archivo .json">Exportar casos</button>
-        <button type="button" id="btnImportar" title="Carga personajes desde un archivo .json exportado">Importar casos</button>
-        <input type="file" id="archivoImportar" accept=".json,application/json" hidden>
-      </div>
-      <button type="button" id="btnActividades" class="item" style="margin-top:12px"><b>Actividades y guía</b><small>Códigos para tus clases</small></button>
-      <button type="button" id="btnPronunciacion" class="item"><b>Pronunciación</b><small>Cómo dice la voz ciertas palabras</small></button>
-      <button type="button" id="btnEntrevistas" class="item" style="margin-top:12px"><b>Entrevistas</b><small>Evaluación completa de cada estudiante</small></button>
-      <button type="button" id="btnConsentimiento" class="item"><b>Consentimiento</b><small>Texto que aceptan antes de entrevistar</small></button>
-      <button type="button" id="btnDocentes" class="item" style="margin-top:12px" hidden><b>Docentes</b><small>Códigos de ingreso D1 a D6</small></button>
-      <button type="button" id="btnReportes" class="item" style="margin-top:12px"><b>Reportar un problema</b><small id="subReportes">Avisa una falla de la plataforma</small></button>
-      <button type="button" id="btnSalir" style="margin-top:12px">Salir</button>
+    <nav class="secciones" aria-label="Secciones del panel">
+      <button type="button" id="btnPersonajes" class="item"><b>Personajes</b></button>
+      <button type="button" id="btnEntrevistas" class="item"><b>Entrevistas</b></button>
+      <button type="button" id="btnActividades" class="item"><b>Actividades y guía</b></button>
+      <button type="button" id="btnPronunciacion" class="item"><b>Pronunciación</b></button>
+      <button type="button" id="btnConsentimiento" class="item"><b>Consentimiento</b></button>
+      <button type="button" id="btnDocentes" class="item" hidden><b>Docentes</b></button>
+      <button type="button" id="btnReportes" class="item"><b id="subReportes">Reportar un problema</b></button>
+      <span class="esp"></span>
+      <button type="button" id="btnSalir">Salir</button>
     </nav>
+
+    <section id="vistaTablero" class="actividades" aria-labelledby="tituloTablero">
+      <div class="tablero-cab">
+        <div>
+          <h2 id="tituloTablero">Casos clínicos</h2>
+          <p class="ayuda">Cada caso puede tener una versión básica, una intermedia y una avanzada. Toca una versión para editarla.</p>
+        </div>
+        <div class="tablero-acc">
+          <button type="button" id="btnExportar" title="Descarga todos los personajes en un archivo .json">Exportar casos</button>
+          <button type="button" id="btnImportar" title="Carga personajes desde un archivo .json exportado">Importar casos</button>
+          <input type="file" id="archivoImportar" accept=".json,application/json" hidden>
+          <button type="button" id="btnNuevo" class="primario">+ Nuevo caso</button>
+        </div>
+      </div>
+      <div id="lista" class="tablero"></div>
+    </section>
 
     <section id="vistaActividades" class="actividades" hidden aria-labelledby="tituloAct">
       <div class="caja" style="display:flex;flex-direction:column;gap:8px">
@@ -282,7 +312,12 @@ legend { font: 700 1rem var(--display); padding: 0 6px; }
       </div>
     </section>
 
-    <form id="editor" autocomplete="off">
+    <form id="editor" autocomplete="off" hidden>
+      <div class="editor-cab">
+        <button type="button" id="btnVolverCasos">← Casos</button>
+        <h2 id="tituloEditor"></h2>
+        <div class="niveles-ed" id="nivelesEditor" role="group" aria-label="Versiones de este caso"></div>
+      </div>
       <fieldset>
         <legend>Caso</legend>
         <div class="campo"><label for="f_id">Identificador</label><input type="text" id="f_id" placeholder="ej. rosa-58"><span class="ayuda">Solo minúsculas sin tildes, números o guiones. No se puede cambiar después.</span></div>
@@ -503,6 +538,8 @@ async function api(ruta, opciones = {}) {
 }
 
 function salir() { codigo = ""; $("codigoDocente").value = ""; $("panel").hidden = true; $("formAcceso").hidden = false; document.body.classList.remove("solo-lectura"); $("btnDocentes").hidden = true; }
+$("btnPersonajes").onclick = () => irA(verTablero);
+$("btnVolverCasos").onclick = () => irA(verTablero);
 $("btnSalir").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir igual?")) return; salir(); };
 $("formAcceso").addEventListener("submit", e => { e.preventDefault(); codigo = $("codigoDocente").value.trim(); if (codigo) cargar(); });
 
@@ -513,12 +550,11 @@ async function cargar() {
     casos = d.casos || []; editable = d.editable;
     const esAdmin = (d.rol || "admin") === "admin";
     document.body.classList.toggle("solo-lectura", !esAdmin); $("btnDocentes").hidden = !esAdmin;
-    esAdminSesion = esAdmin; $("subReportes").textContent = esAdmin ? "Envía uno o revisa los recibidos" : "Avisa una falla de la plataforma";
+    esAdminSesion = esAdmin; $("subReportes").textContent = esAdmin ? "Reportes" : "Reportar un problema";
     $("formAcceso").hidden = true; $("panel").hidden = false;
     if (!esAdmin) aviso(`Sesión ${d.etiqueta}: puedes revisar personajes, entrevistas y evaluaciones. Para conversar con la paciente, usa «Volver al inicio» e ingresa con tu código en la pestaña Estudiante. Editar o borrar lo hace administración.`);
     else if (!editable) aviso("Estás viendo los personajes del archivo de respaldo. Para editarlos, configura SUPABASE_URL y SUPABASE_SECRET_KEY en Vercel.");
-    pintarLista();
-    abrir(actual ? casos.find(c => c.id === actual.id) || casos[0] : casos[0]);
+    verTablero();
     cargarVoces(); cargarRubrica();
   } catch (e) { aviso(e.message); }
 }
@@ -527,33 +563,62 @@ async function cargar() {
 const NIVELES = ["Básico", "Intermedio", "Avanzado"];
 const grupoDe = c => c.grupo || c.id;
 const FEMENINO = { "Básico": "básica", "Intermedio": "intermedia", "Avanzado": "avanzada" };
-function pintarLista() {
-  const cont = $("lista"); cont.textContent = "";
+function agrupar() {
   const grupos = new Map();
   for (const c of casos) { const g = grupoDe(c); if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push(c); }
-  for (const [g, versiones] of grupos) {
-    const caja = document.createElement("div"); caja.className = "grupo-caso";
-    const tit = document.createElement("span"); tit.className = "label"; tit.textContent = versiones[0].nombre; caja.append(tit);
-    const pos = c => { const i = NIVELES.indexOf(c.nivel_dificultad); return i < 0 ? 9 : i; };
-    for (const c of [...versiones].sort((a, b) => pos(a) - pos(b))) {
-      const b = document.createElement("button"); b.type = "button"; b.className = "item" + (c.activo ? "" : " inactivo");
-      b.setAttribute("aria-current", String(actual && actual.id === c.id && !nuevo));
-      const t = document.createElement("b"); t.textContent = c.nivel_dificultad;
-      const s = document.createElement("small");
-      const p = document.createElement("span"); p.className = "punto " + (c.voz_id ? "con-voz" : "sin-voz"); p.title = c.voz_id ? "Tiene voz propia" : "Usa la voz general";
-      s.append(p, `${c.nombre} · ${c.edad}`);
-      if (!c.activo) { const o = document.createElement("span"); o.className = "oculto"; o.textContent = "Oculto para estudiantes"; o.title = "Solo se ve en este panel. Para mostrarlo, marca «Visible para estudiantes» y guarda."; s.append(o); }
-      b.append(t, s);
-      b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Cambiar de personaje igual?")) return; abrir(c); };
-      caja.append(b);
+  const pos = c => { const i = NIVELES.indexOf(c.nivel_dificultad); return i < 0 ? 9 : i; };
+  for (const v of grupos.values()) v.sort((a, b) => pos(a) - pos(b));
+  return grupos;
+}
+function irA(accion) { if (cambios && !confirm("Tienes cambios sin guardar. ¿Salir de este personaje igual?")) return; accion(); }
+function verTablero() { cambios = false; actual = null; nuevo = false; pintarLista(); verVista("vistaTablero"); window.scrollTo(0, 0); }
+// Tablero: una tarjeta por caso, con un casillero por nivel (visible, oculto o por crear).
+function pintarLista() {
+  const cont = $("lista"); cont.textContent = "";
+  if (!casos.length) cont.append(el("p", "Todavía no hay casos. Crea el primero con «+ Nuevo caso».", "ayuda"));
+  for (const versiones of agrupar().values()) {
+    const base = versiones[0], t = el("article", undefined, "caso-tarjeta");
+    t.append(el("h3", base.nombre), el("div", [base.edad, base.motivo].filter(Boolean).join(" · "), "sub"));
+    const usados = new Set();
+    for (const n of NIVELES) {
+      const c = versiones.find(x => x.nivel_dificultad === n && !usados.has(x.id));
+      if (c) { usados.add(c.id); t.append(casillero(c)); }
+      else if (editable) {
+        const b = el("button", "+ Crear versión " + FEMENINO[n], "slot falta"); b.type = "button";
+        b.onclick = () => crearVersion(base, n); t.append(b);
+      }
     }
-    if (editable) for (const n of NIVELES) {
-      if (versiones.some(c => c.nivel_dificultad === n)) continue;
-      const b = document.createElement("button"); b.type = "button"; b.className = "item falta"; b.textContent = "+ Crear versión " + FEMENINO[n];
-      b.onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Crear la versión igual?")) return; crearVersion(versiones[0], n); };
-      caja.append(b);
-    }
-    cont.append(caja);
+    for (const c of versiones) if (!usados.has(c.id)) t.append(casillero(c));
+    cont.append(t);
+  }
+  pintarCabeceraEditor();
+}
+function casillero(c) {
+  const b = el("button", undefined, "slot"); b.type = "button";
+  const izq = el("span"); const p = el("span", undefined, "punto " + (c.voz_id ? "con-voz" : "sin-voz")); p.title = c.voz_id ? "Tiene voz propia" : "Usa la voz general";
+  izq.append(p, c.nivel_dificultad || "Sin nivel");
+  b.append(izq, el("span", c.activo ? "Visible" : "Oculto", "estado " + (c.activo ? "visible" : "oculto")));
+  b.title = c.activo ? "Los estudiantes ven esta versión" : "Solo se ve en este panel. Para mostrarla, marca «Visible para estudiantes» y guarda.";
+  b.onclick = () => abrir(c);
+  return b;
+}
+// Arriba del editor: el nombre del caso y un botón por nivel para pasar de una versión a otra o crear la que falta.
+function pintarCabeceraEditor() {
+  const cont = $("nivelesEditor"); cont.textContent = "";
+  const g = actual ? grupoDe(actual) : (nuevo ? $("f_grupo").value.trim().toLowerCase() : "");
+  const versiones = (g && agrupar().get(g)) || [];
+  $("tituloEditor").textContent = actual ? actual.nombre : versiones.length ? versiones[0].nombre : "Nuevo caso";
+  if (!versiones.length) return;
+  const enCreacion = nuevo ? $("f_nivel_dificultad").value : "";
+  for (const n of NIVELES) {
+    const c = versiones.find(x => x.nivel_dificultad === n);
+    const b = el("button", undefined, c || enCreacion === n ? "" : "falta"); b.type = "button";
+    if (c) {
+      b.textContent = n + (c.activo ? "" : " · oculto"); b.setAttribute("aria-pressed", String(Boolean(actual && actual.id === c.id)));
+      b.onclick = () => { if (actual && actual.id === c.id) return; irA(() => abrir(c)); };
+    } else if (enCreacion === n) { b.textContent = n + " · sin guardar"; b.setAttribute("aria-pressed", "true"); }
+    else { if (!editable) continue; b.textContent = "+ " + n; b.title = "Crear la versión " + FEMENINO[n]; b.onclick = () => irA(() => crearVersion(versiones[0], n)); }
+    cont.append(b);
   }
 }
 // Parte de una copia de la versión existente: se ajusta el guion a la nueva dificultad y recién al guardar se crea.
@@ -562,13 +627,14 @@ function crearVersion(base, nivel) {
   let id = `${g}-${sufijo}`.slice(0, 40); for (let i = 2; casos.some(c => c.id === id); i++) id = `${g}-${sufijo}`.slice(0, 37) + "-" + i;
   abrir({ ...base, nivel_dificultad: nivel, grupo: g, activo: false }, id); // mismo orden que la base: dentro del caso se ordena por nivel
   cambios = true; sugerirFoco();
-  $("estadoGuardado").textContent = `Versión ${FEMENINO[nivel]} sin guardar: es una copia de «${base.nombre}». Ajusta el guion, las emociones y los hitos a esta dificultad, y guarda. Queda oculta hasta que marques «Visible para estudiantes».`;
+  $("estadoGuardado").textContent = `Versión ${FEMENINO[nivel]} sin guardar: copia oculta de «${base.nombre}». Ajústala a esta dificultad y guarda.`;
 }
 
 // Muestra una sola vista a la vez (editor de personaje u otra sección) y marca su botón en la lista.
-const VISTAS = { editor: null, vistaActividades: "btnActividades", vistaPronunciacion: "btnPronunciacion", vistaEntrevistas: "btnEntrevistas", vistaConsentimiento: "btnConsentimiento", vistaDocentes: "btnDocentes", vistaReportes: "btnReportes" };
+const VISTAS = { vistaTablero: null, editor: null, vistaActividades: "btnActividades", vistaPronunciacion: "btnPronunciacion", vistaEntrevistas: "btnEntrevistas", vistaConsentimiento: "btnConsentimiento", vistaDocentes: "btnDocentes", vistaReportes: "btnReportes" };
 function verVista(id) {
   for (const [v, b] of Object.entries(VISTAS)) { $(v).hidden = v !== id; if (b) $(b).setAttribute("aria-current", String(v === id)); }
+  $("btnPersonajes").setAttribute("aria-current", String(id === "editor" || id === "vistaTablero"));
 }
 // c: personaje que se muestra. idCopia: si viene, c es solo la plantilla de un personaje nuevo con ese identificador.
 function abrir(c, idCopia) {
@@ -781,7 +847,7 @@ $("archivoImportar").onchange = async () => {
   aviso(`Se importaron ${ok} de ${lista.length} personaje(s).` + (fallas.length ? " No se pudieron importar: " + fallas.join(" · ") : ""));
 };
 
-$("btnNuevo").onclick = () => { if (cambios && !confirm("Tienes cambios sin guardar. ¿Crear otro igual?")) return; abrir(null); $("f_id").focus(); };
+$("btnNuevo").onclick = () => { abrir(null); $("f_id").focus(); };
 $("editor").addEventListener("input", () => { cambios = true; $("estadoGuardado").textContent = "Cambios sin guardar"; $("estadoGuardado").className = ""; });
 window.addEventListener("beforeunload", e => { if (cambios) { e.preventDefault(); e.returnValue = ""; } });
 
@@ -1320,9 +1386,8 @@ $("btnBorrar").onclick = async () => {
     await api("/api/docente", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accion: "borrarCaso", id: actual.id }) });
     const nombre = actual.nombre;
     casos = casos.filter(c => c.id !== actual.id);
-    cambios = false;
-    if (casos.length) abrir(casos[0]); else abrir(null);
-    $("estadoGuardado").textContent = `${nombre} fue borrado.`; $("estadoGuardado").className = "ok";
+    verTablero();
+    aviso(`Se borró «${nombre}».`);
   } catch (err) { $("estadoGuardado").textContent = err.message; $("estadoGuardado").className = "err"; $("btnBorrar").disabled = !editable; }
 };
 
